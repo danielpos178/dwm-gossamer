@@ -33,9 +33,9 @@ sudo pacman -S --needed xorg-server xorg-xinit xorg-xrandr xorg-xsetroot xorg-xs
 sudo pacman -S --needed rofi picom dunst feh flameshot dex mate-polkit alsa-utils noto-fonts-emoji ttf-meslo-nerd
 ```
 
-**Terminal** (pick one — ghostty is the default):
+**Terminal** (pick one — alacritty is the default):
 ```bash
-sudo pacman -S ghostty   # or: alacritty, kitty
+sudo pacman -S alacritty   # or: ghostty, kitty
 ```
 
 **Status bar:**

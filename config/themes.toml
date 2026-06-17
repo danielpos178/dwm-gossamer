@@ -11,7 +11,7 @@
 # 2. Save the file — DWM, terminal, rofi, and polybar all update instantly!
 #
 # Available themes:
-#   DARK:  nord · dracula · gruvbox · catppuccin · tokyonight · onedark
+#   DARK:  nord · dracula · gruvbox-hard · gruvbox · catppuccin · tokyonight · onedark
 #          solarized · rosepine · everforest · monochrome
 #   LIGHT: catppuccin-latte · gruvbox-light · solarized-light · rosepine-dawn · tokyonight-day
 #
@@ -28,7 +28,7 @@
 # ══════════════════════════════════════════════════════════════════════════════
 
 [active]
-theme = "nord"   # ← change only this line to switch themes
+theme = "gruvbox-hard"   # ← change only this line to switch themes
 
 [appearance]
 borderpx = 1   # border size in pixels (0 = none, 1-3 = recommended)
@@ -48,7 +48,7 @@ borderpx = 1   # border size in pixels (0 = none, 1-3 = recommended)
 #     term_bg / term_fg / term_cursor
 #     term_color0 … term_color15  (standard 16-color palette)
 #
-#   Ghostty: ghostty_theme = "BuiltInThemeName"  (or "custom" to use term_* above)
+#   Alacritty: term_* colors are written to active-theme.toml. alacritty_theme is metadata for named presets.
 #   Rofi:    rofi_theme    = "filename"           (without .rasi, from rofi/themes/)
 #   Dark mode: dark_mode = true                   (true = dark, false = light; default: true)
 #   Polybar: polybar_bg / polybar_fg / polybar_bg_alt / polybar_fg_alt / polybar_accent / polybar_urgent
@@ -136,45 +136,45 @@ polybar_accent  = "#BD93F9"
 polybar_urgent  = "#FF5555"
 
 
-# ── Gruvbox Dark ──────────────────────────────────────────────────────────────
-[theme.gruvbox]
-normfgcolor     = "#EBDBB2"
-normbgcolor     = "#3C3836"
-normbordercolor = "#282828"
-selfgcolor      = "#FBF1C7"
+# ── Gruvbox Dark Hard ─────────────────────────────────────────────────────────
+[theme.gruvbox-hard]
+normfgcolor     = "#ebdbb2"
+normbgcolor     = "#1d2021"
+normbordercolor = "#1d2021"
+selfgcolor      = "#fbf1c7"
 selbgcolor      = "#504945"
-selbordercolor  = "#D79921"
+selbordercolor  = "#fabd2f"
 
-term_bg         = "#282828"
-term_fg         = "#EBDBB2"
-term_cursor     = "#D79921"
-term_color0     = "#282828"
-term_color1     = "#CC241D"
-term_color2     = "#98971A"
-term_color3     = "#D79921"
+term_bg         = "#1d2021"
+term_fg         = "#ebdbb2"
+term_cursor     = "#fabd2f"
+term_color0     = "#1d2021"
+term_color1     = "#cc241d"
+term_color2     = "#98971a"
+term_color3     = "#d79921"
 term_color4     = "#458588"
-term_color5     = "#B16286"
-term_color6     = "#689D6A"
-term_color7     = "#A89984"
+term_color5     = "#b16286"
+term_color6     = "#689d6a"
+term_color7     = "#a89984"
 term_color8     = "#928374"
-term_color9     = "#FB4934"
-term_color10    = "#B8BB26"
-term_color11    = "#FABD2F"
-term_color12    = "#83A598"
-term_color13    = "#D3869B"
-term_color14    = "#8EC07C"
-term_color15    = "#EBDBB2"
+term_color9     = "#fb4934"
+term_color10    = "#b8bb26"
+term_color11    = "#fabd2f"
+term_color12    = "#83a598"
+term_color13    = "#d3869b"
+term_color14    = "#8ec07c"
+term_color15    = "#ebdbb2"
 
-ghostty_theme   = "Gruvbox Dark"
+alacritty_theme = "gruvbox-dark-hard"
 rofi_theme      = "sidetab-gruvbox"
 dark_mode       = true
 
-polybar_bg      = "#282828"
-polybar_fg      = "#EBDBB2"
-polybar_bg_alt  = "#3C3836"
+polybar_bg      = "#1d2021"
+polybar_fg      = "#ebdbb2"
+polybar_bg_alt  = "#3c3836"
 polybar_fg_alt  = "#928374"
-polybar_accent  = "#D79921"
-polybar_urgent  = "#CC241D"
+polybar_accent  = "#fabd2f"
+polybar_urgent  = "#cc241d"
 
 
 # ── Catppuccin Mocha ──────────────────────────────────────────────────────────

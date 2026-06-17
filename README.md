@@ -39,7 +39,7 @@ curl -fsSL https://christitus.com/linux | sh
 
 <img width="1839" height="1000" alt="image" src="https://github.com/user-attachments/assets/314f9a40-4ccb-4c34-b3d2-dcfee63c278b" />
 
-Select `dwm`, `rofi`, `bash prompt`, and `ghostty` using the `v` key, then press `Enter`.
+Select `dwm`, `rofi`, `bash prompt`, and `alacritty` using the `v` key, then press `Enter`.
 
 ### Manual Install
 
@@ -62,8 +62,8 @@ sudo pacman -S --needed rofi picom dunst feh flameshot dex mate-polkit alsa-util
 
 **Terminal emulator** (at least one):
 ```bash
-# Pick one — ghostty is the default in config.h
-sudo pacman -S ghostty   # or: alacritty, kitty
+# Pick one — alacritty is the default in config.h
+sudo pacman -S alacritty   # or: ghostty, kitty
 ```
 
 **Polybar** (status bar):
@@ -155,7 +155,7 @@ make && sudo make install
 Key things to customize in `config.h`:
 - **`refresh_rate`** — match your monitor (default: 60, set to 120 for high-refresh)
 - **`fonts[]`** — font family and size
-- **`colors[]`** — color scheme (Nord theme by default in config.h)
+- **`colors[]`** — color scheme (Gruvbox Dark Hard theme by default in config.h)
 - **`autostart[]`** — programs launched on startup
 - **`rules[]`** — per-application window rules (floating, tags, terminal detection)
 - **`keys[]`** — all keybindings
@@ -179,7 +179,7 @@ Key things to customize in `config.h`:
 - Install icon fonts: `cp -r polybar/fonts/* ~/.local/share/fonts/ && fc-cache -fv`
 
 **Terminal doesn't open (SUPER+X):**
-- Install a terminal emulator (ghostty, alacritty, kitty, or st)
+- Install a terminal emulator (alacritty, ghostty, kitty, or st)
 - Or edit `config.h` → `termcmd[]` to use your preferred terminal
 
 **Multi-monitor issues:**

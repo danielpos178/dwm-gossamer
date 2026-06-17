@@ -1,4 +1,9 @@
 #!/bin/bash
+# ─────────────────────────────────────────────────────────
+# install.sh — dwm-titus installer (x86_64)
+# Supports: Arch Linux, Void Linux
+# Distro-specific logic lives in scripts/distros/*.sh
+# ─────────────────────────────────────────────────────────
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -10,49 +15,56 @@ ok()   { printf "${GREEN}[OK]${NC} %s\n" "$1"; }
 warn() { printf "${YELLOW}[WARN]${NC} %s\n" "$1"; }
 err()  { printf "${RED}[ERROR]${NC} %s\n" "$1"; }
 
-command -v pacman &>/dev/null || { err "This installer requires Arch Linux (pacman not found)."; exit 1; }
+# ── Detect and load distro profile ───────────────────────
+load_distro
+setup_pkg_manager
 
 BG_DIR="$HOME/Pictures/backgrounds"
 
 echo ""
 echo "╔═══════════════════════════════════════════╗"
-echo "║        dwm-titus Installer (Arch)         ║"
+echo "║        dwm-titus Installer               ║"
 echo "╚═══════════════════════════════════════════╝"
 echo ""
+info "Detected: $DISTRO_NAME"
 info "Package manager: $PKG_CMD"
 
 # ── Build dependencies ───────────────────────────────────
 info "Installing build dependencies..."
-install_packages base-devel libx11 libxft libxinerama imlib2 libxcb xcb-util freetype2 fontconfig
+install_packages "${BUILD_DEPS[@]}"
 
-if pacman -Qq 2>/dev/null | grep -q '^xlibre'; then
+if has_xlibre; then
     info "Xlibre detected — skipping xorg-server."
-elif ! pacman -Qi xorg-server &>/dev/null; then
-    install_packages xorg-server
+else
+    install_packages "${XORG_PKGS[@]}"
 fi
-install_packages xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset
 ok "Build dependencies installed."
 
 # ── Runtime dependencies ─────────────────────────────────
 info "Installing runtime dependencies..."
-install_packages rofi picom dunst feh flameshot dex mate-polkit alsa-utils git unzip xclip \
-    xorg-xprop thunar gvfs tumbler thunar-archive-plugin nwg-look xdg-user-dirs \
-    xdg-desktop-portal-gtk pipewire pavucontrol gnome-keyring networkmanager network-manager-applet \
-    libnotify rsync
+for pkg in "${RUNTIME_DEPS[@]}"; do
+    install_packages "$pkg" 2>/dev/null \
+        || warn "Package '$pkg' not found — skipping."
+done
 ok "Runtime dependencies installed."
 
 # ── Qt / GTK theming ─────────────────────────────────────
 info "Installing Qt/GTK dark-mode dependencies..."
 # dconf: required for gsettings to persist GTK color-scheme changes
-# qt6ct / qt5ct: QT_QPA_PLATFORMTHEME backend for Qt dark mode in standalone WMs
-install_packages dconf
-install_packages qt6ct 2>/dev/null || install_packages qt5ct 2>/dev/null \
-    || warn "Neither qt6ct nor qt5ct found in repos — Qt apps may not respect dark mode."
+# qt6ct / qt5ct: QT_QPA_PLATFORMTHEME backend for Qt dark mode
+install_packages "${THEME_DEPS[0]}" 2>/dev/null \
+    || warn "Package '${THEME_DEPS[0]}' not found — skipping."
+install_packages "${THEME_DEPS[1]}" 2>/dev/null \
+    || install_packages "${THEME_DEPS[2]}" 2>/dev/null \
+    || warn "Neither qt6ct nor qt5ct found — Qt apps may not respect dark mode."
 ok "Qt/GTK theming dependencies installed."
 
 # ── Fonts ────────────────────────────────────────────────
 info "Installing fonts..."
-install_packages noto-fonts-emoji ttf-meslo-nerd
+for pkg in "${FONT_PKGS[@]}"; do
+    install_packages "$pkg" 2>/dev/null \
+        || warn "Font package '$pkg' not found — skipping."
+done
 FONT_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONT_DIR"
 if [ -d "$REPO_DIR/config/polybar/fonts" ]; then
@@ -63,17 +75,18 @@ ok "Fonts installed."
 
 # ── Terminal emulator ────────────────────────────────────
 terminal=""
-for t in ghostty kitty alacritty; do command -v "$t" &>/dev/null && { terminal="$t"; break; }; done
+for t in alacritty kitty; do command -v "$t" &>/dev/null && { terminal="$t"; break; }; done
 
 if [ -n "$terminal" ]; then
     ok "Terminal already installed: $terminal"
 else
-    info "No supported terminal found — installing ghostty..."
-    install_packages ghostty 2>/dev/null || warn "ghostty not in repos — install from https://ghostty.org"
+    info "No supported terminal found — installing $TERMINAL_PKG..."
+    install_packages "$TERMINAL_PKG" 2>/dev/null \
+        || warn "$TERMINAL_PKG not found — install your preferred terminal manually."
 fi
 
 # ── Polybar + XDG dirs + wallpapers ──────────────────────
-install_packages polybar
+install_packages "$BAR_PKG" 2>/dev/null || warn "$BAR_PKG not found."
 command -v xdg-user-dirs-update &>/dev/null && xdg-user-dirs-update
 
 mkdir -p "$HOME/Pictures"
@@ -86,8 +99,6 @@ else
     ok "Wallpapers already present."
 fi
 
-
-
 # ── Display manager ──────────────────────────────────────
 currentdm=""
 for dm in lightdm sddm gdm; do command -v "$dm" &>/dev/null && { currentdm="$dm"; break; }; done
@@ -96,8 +107,11 @@ if [ -n "$currentdm" ]; then
     ok "Display manager already installed: $currentdm"
 else
     info "No display manager found — installing LightDM..."
-    install_packages lightdm lightdm-slick-greeter
-    sudo systemctl enable lightdm
+    for pkg in "${DM_PKGS[@]}"; do
+        install_packages "$pkg" 2>/dev/null \
+            || warn "Package '$pkg' not found — skipping."
+    done
+    enable_service "$DM_SERVICE"
     ok "LightDM installed and enabled."
 fi
 

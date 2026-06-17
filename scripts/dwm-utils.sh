@@ -5,19 +5,34 @@
 #   source "$(dirname "$0")/dwm-utils.sh"
 # ─────────────────────────────────────────────────────────
 
-# ── Package Manager ─────────────────────────────────────
-# Prefer AUR helpers for access to AUR packages
-if command -v paru &>/dev/null; then
-    PKG_CMD="paru -S --needed --noconfirm"
-elif command -v yay &>/dev/null; then
-    PKG_CMD="yay -S --needed --noconfirm"
-else
-    PKG_CMD="sudo pacman -S --needed --noconfirm"
-fi
+# ── OS Detection ─────────────────────────────────────────
 
-install_packages() {
-    # shellcheck disable=SC2086
-    $PKG_CMD "$@" >/dev/null
+# Detect the current Linux distribution ID from /etc/os-release
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        echo "$ID"
+    else
+        echo "unknown"
+    fi
+}
+
+# Load the distro-specific profile (package lists, functions)
+# Requires $REPO_DIR to be set by the caller before sourcing this file
+load_distro() {
+    local os_id
+    os_id="$(detect_distro)"
+    local distro_file="${REPO_DIR}/scripts/distros/${os_id}.sh"
+
+    if [ ! -f "$distro_file" ]; then
+        echo "[ERROR] Unsupported distribution: $os_id" >&2
+        echo "[ERROR] Supported: arch, void" >&2
+        exit 1
+    fi
+
+    # shellcheck disable=SC1090
+    source "$distro_file"
 }
 
 # ── Hardware Detection ──────────────────────────────────
@@ -58,7 +73,7 @@ is_laptop() {
 
 # Detect first available terminal emulator
 detect_terminal() {
-    for t in ghostty alacritty kitty st warp-terminal xterm; do
+    for t in alacritty kitty st xterm; do
         if command -v "$t" &>/dev/null; then
             echo "$t"
             return

@@ -50,7 +50,7 @@ Add or change bindings without recompiling. Save the file and they apply instant
 
 ```toml
 [vars]
-terminal = "ghostty"
+terminal = "alacritty"
 webapp   = "webapp-launch"
 
 keys = [

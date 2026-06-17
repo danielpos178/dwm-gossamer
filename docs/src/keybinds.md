@@ -57,7 +57,7 @@ Bindings are defined in `config/hotkeys.toml` and reload instantly on save — n
 
 | Keys | Action |
 |------|--------|
-| `Super` + `T` | Tiling layout |
+| `Super` + `U` | Tiling layout |
 | `Super` + `M` | Fullscreen (monocle) |
 | `Super` + `Space` | Toggle floating for window |
 | `Super` + `Shift` + `M` | Toggle floating for window |
@@ -119,7 +119,7 @@ Edit `config/hotkeys.toml` — changes take effect on save, no recompile require
 
 ```toml
 [vars]
-terminal = "ghostty"
+terminal = "alacritty"
 
 keys = [
   { mod="SUPER SHIFT", key="f", desc="Firefox", func="spawn", exec=["firefox"] },
