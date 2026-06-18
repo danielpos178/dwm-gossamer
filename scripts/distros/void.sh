@@ -9,7 +9,7 @@
 #   - Service management uses runit (symlinks in /var/service)
 #   - Build deps use -devel suffix (not freetype2, not libx11)
 #   - Some packages have different names (Thunar, NetworkManager)
-#   - ttf-meslo-nerd is not available; install nerd-fonts manually
+#   - Uses nerd-fonts-ttf instead of ttf-meslo-nerd (not packaged on Void)
 # ─────────────────────────────────────────────────────────
 
 DISTRO_NAME="Void Linux"
@@ -50,8 +50,8 @@ disable_service() {
 # All package names verified against void-linux/void-packages
 
 BUILD_DEPS=(
-    base-devel libX11-devel libxft-devel libXinerama-devel imlib2-devel
-    libxcb-devel xcb-util-devel freetype-devel fontconfig-devel
+    base-devel libX11-devel libxft-devel libXinerama-devel libXrender-devel
+    imlib2-devel libxcb-devel xcb-util-devel freetype-devel fontconfig-devel
 )
 
 XORG_PKGS=(
@@ -59,7 +59,7 @@ XORG_PKGS=(
 )
 
 RUNTIME_DEPS=(
-    rofi picom dunst feh dex polkit-gnome alsa-utils
+    rofi picom dunst feh dex mate-polkit elogind elogind-runit alsa-utils
     git unzip xclip xprop Thunar gvfs tumbler
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire pavucontrol gnome-keyring
@@ -67,7 +67,15 @@ RUNTIME_DEPS=(
 )
 
 THEME_DEPS=(dconf qt6ct qt5ct)
-FONT_PKGS=(noto-fonts-emoji)
+FONT_PKGS=(
+    noto-fonts-ttf            # Google Noto: sans, serif, mono (multilingual)
+    noto-fonts-cjk            # Chinese, Japanese, Korean
+    noto-fonts-emoji           # Emoji support
+    dejavu-fonts-ttf           # DejaVu: common baseline font family
+    liberation-fonts-ttf       # Liberation: metric-compatible with MS fonts
+    font-awesome               # Font Awesome icons (polybar/dwm)
+    nerd-fonts-ttf             # Nerd Fonts: icons for terminal/polybar
+)
 TERMINAL_PKG=alacritty
 BAR_PKG=polybar
 DM_PKGS=(lightdm lightdm-slick-greeter)

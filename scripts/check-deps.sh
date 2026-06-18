@@ -1,6 +1,7 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────
-# dwm-titus dependency checker — Arch Linux
+# dwm-titus dependency checker
+# Supports: Arch Linux (pacman), Void Linux (xbps)
 # Run before building to verify all required packages
 # are installed. Exit code 0 = all good, 1 = missing deps.
 # ─────────────────────────────────────────────────────────
@@ -12,6 +13,19 @@ NC='\033[0m'
 
 MISSING=0
 
+# ── Detect package manager ──────────────────────────────
+detect_pkg_manager() {
+    if command -v pacman &>/dev/null; then
+        echo "pacman"
+    elif command -v xbps-install &>/dev/null; then
+        echo "xbps"
+    else
+        echo "unknown"
+    fi
+}
+
+PKG_MGR=$(detect_pkg_manager)
+
 check_cmd() {
     if command -v "$1" &>/dev/null; then
         printf "  ${GREEN}✓${NC} %s\n" "$1"
@@ -21,13 +35,30 @@ check_cmd() {
     fi
 }
 
-check_pkg() {
+check_pkg_pacman() {
     if pacman -Qi "$1" &>/dev/null; then
         printf "  ${GREEN}✓${NC} %s\n" "$1"
     else
         printf "  ${RED}✗${NC} %s ${YELLOW}(not installed)${NC}\n" "$1"
         MISSING=$((MISSING + 1))
     fi
+}
+
+check_pkg_xbps() {
+    if xbps-query -l 2>/dev/null | command grep -q "^ii $1 "; then
+        printf "  ${GREEN}✓${NC} %s\n" "$1"
+    else
+        printf "  ${RED}✗${NC} %s ${YELLOW}(not installed)${NC}\n" "$1"
+        MISSING=$((MISSING + 1))
+    fi
+}
+
+check_pkg() {
+    case "$PKG_MGR" in
+        pacman) check_pkg_pacman "$1" ;;
+        xbps)   check_pkg_xbps "$1" ;;
+        *)      printf "  ${YELLOW}?${NC} %s (cannot check — unknown pkg manager)\n" "$1" ;;
+    esac
 }
 
 check_font() {
@@ -57,34 +88,51 @@ check_font_any() {
 }
 
 echo ""
-echo "═══ dwm-titus Dependency Check (Arch Linux) ═══"
+echo "═══ dwm-titus Dependency Check ($PKG_MGR) ═══"
 echo ""
 
 # ── Build dependencies ──────────────────────────────────
 echo "Build Dependencies (required to compile):"
-for pkg in base-devel libx11 libxft libxinerama imlib2 libxcb xcb-util freetype2 fontconfig; do
-    check_pkg "$pkg"
-done
+case "$PKG_MGR" in
+    pacman)
+        for pkg in base-devel libx11 libxft libxinerama imlib2 libxcb xcb-util freetype2 fontconfig; do
+            check_pkg "$pkg"
+        done
+        ;;
+    xbps)
+        for pkg in base-devel libX11-devel libxft-devel libXinerama-devel imlib2-devel libxcb-devel xcb-util-devel freetype-devel fontconfig-devel; do
+            check_pkg "$pkg"
+        done
+        ;;
+esac
 check_cmd "cc"
 check_cmd "make"
 echo ""
 
 # ── Xorg / Xlibre ───────────────────────────────────────
 echo "X Server Components:"
-# Accept either Xorg or Xlibre as the X server
-# Detect Xlibre by any installed xlibre-* package (server, drivers, etc.)
-if pacman -Qq 2>/dev/null | grep -q '^xlibre'; then
-    xlibre_pkg=$(pacman -Qq 2>/dev/null | grep '^xlibre' | head -1)
-    printf "  ${GREEN}✓${NC} Xlibre detected (%s)\n" "$xlibre_pkg"
-elif pacman -Qi xorg-server &>/dev/null; then
-    printf "  ${GREEN}✓${NC} xorg-server\n"
-else
-    printf "  ${RED}✗${NC} xorg-server or xlibre ${YELLOW}(not installed)${NC}\n"
-    MISSING=$((MISSING + 1))
-fi
-for pkg in xorg-xinit xorg-xrandr xorg-xset xorg-xsetroot; do
-    check_pkg "$pkg"
-done
+case "$PKG_MGR" in
+    pacman)
+        if pacman -Qq 2>/dev/null | grep -q '^xlibre'; then
+            xlibre_pkg=$(pacman -Qq 2>/dev/null | grep '^xlibre' | head -1)
+            printf "  ${GREEN}✓${NC} Xlibre detected (%s)\n" "$xlibre_pkg"
+        elif pacman -Qi xorg-server &>/dev/null; then
+            printf "  ${GREEN}✓${NC} xorg-server\n"
+        else
+            printf "  ${RED}✗${NC} xorg-server or xlibre ${YELLOW}(not installed)${NC}\n"
+            MISSING=$((MISSING + 1))
+        fi
+        for pkg in xorg-xinit xorg-xrandr xorg-xset xorg-xsetroot; do
+            check_pkg "$pkg"
+        done
+        ;;
+    xbps)
+        check_pkg xorg-server
+        for pkg in xinit xrandr xsetroot xset; do
+            check_pkg "$pkg"
+        done
+        ;;
+esac
 
 # ── Runtime dependencies ────────────────────────────────
 echo "Runtime Dependencies (desktop experience):"
@@ -145,7 +193,11 @@ if [ $MISSING -eq 0 ]; then
     exit 0
 else
     printf "${RED}$MISSING missing dependency/dependencies.${NC}\n"
-    echo "  Install missing packages with: sudo pacman -S <package>"
+    case "$PKG_MGR" in
+        pacman) echo "  Install missing packages with: sudo pacman -S <package>" ;;
+        xbps)   echo "  Install missing packages with: sudo xbps-install -S <package>" ;;
+        *)      echo "  Install missing packages using your system package manager." ;;
+    esac
     echo "  Or run: ./install.sh   (automated install)"
     exit 1
 fi

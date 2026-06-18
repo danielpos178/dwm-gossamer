@@ -8,7 +8,7 @@
 
 ---
 
-This is a **heavily modified** version of dwm based on the original [suckless.org](https://dwm.suckless.org/) dwm. It includes numerous patches and customizations for a productive, user-friendly desktop on Arch Linux with Xorg.
+This is a **heavily modified** version of dwm based on the original [suckless.org](https://dwm.suckless.org/) dwm. It includes numerous patches and customizations for a productive, user-friendly desktop on Arch Linux and Void Linux with Xorg.
 
 ### Patches & Features
 
@@ -46,29 +46,56 @@ Select `dwm`, `rofi`, `bash prompt`, and `alacritty` using the `v` key, then pre
 #### 1. Install Dependencies
 
 **Build dependencies** (required to compile):
+
+**Arch Linux:**
 ```bash
 sudo pacman -S --needed base-devel libx11 libxft libxinerama imlib2 libxcb xcb-util freetype2 fontconfig
 ```
 
+**Void Linux:**
+```bash
+sudo xbps-install -Sy base-devel libX11-devel libxft-devel libXinerama-devel imlib2-devel libxcb-devel xcb-util-devel freetype-devel fontconfig-devel
+```
+
 **Xorg**:
+
+**Arch Linux:**
 ```bash
 sudo pacman -S --needed xorg-server xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset
 ```
 
+**Void Linux:**
+```bash
+sudo xbps-install -Sy xorg-server xinit xrandr xsetroot xset
+```
+
 **Runtime dependencies** (desktop experience):
+
+**Arch Linux:**
 ```bash
 sudo pacman -S --needed rofi picom dunst feh flameshot dex mate-polkit alsa-utils noto-fonts-emoji ttf-meslo-nerd
+```
+
+**Void Linux:**
+```bash
+sudo xbps-install -Sy rofi picom dunst feh dex mate-polkit elogind elogind-runit alsa-utils noto-fonts-emoji nerd-fonts-ttf
 ```
 
 **Terminal emulator** (at least one):
 ```bash
 # Pick one — alacritty is the default in config.h
-sudo pacman -S alacritty   # or: ghostty, kitty
+# Arch:
+sudo pacman -S alacritty
+# Void:
+sudo xbps-install -Sy alacritty
 ```
 
 **Polybar** (status bar):
 ```bash
+# Arch:
 sudo pacman -S polybar
+# Void:
+sudo xbps-install -Sy polybar
 ```
 
 #### 2. Clone and Build
@@ -166,12 +193,16 @@ Key things to customize in `config.h`:
 ## 🔍 Troubleshooting
 
 **Black screen / dwm doesn't start:**
-- Verify Xorg is installed: `pacman -Q xorg-server xorg-xinit`
+- Verify Xorg is installed:
+  - Arch: `pacman -Q xorg-server xorg-xinit`
+  - Void: `xbps-query -l xorg-server xinit`
 - Check `.xinitrc` exists and ends with `exec dwm`
 - Try `startx` from a TTY to see error output
 
 **No status bar / Polybar missing:**
-- Install polybar: `sudo pacman -S polybar`
+- Install polybar:
+  - Arch: `sudo pacman -S polybar`
+  - Void: `sudo xbps-install -Sy polybar`
 - Check fonts are installed: `fc-list | grep -i meslo`
 - Verify polybar config: `ls ~/.config/polybar/`
 
@@ -190,6 +221,7 @@ Key things to customize in `config.h`:
 **Dependency check:**
 ```bash
 bash scripts/check-deps.sh
+# Supports both Arch (pacman) and Void Linux (xbps)
 ```
 
 ---
@@ -204,7 +236,7 @@ bash scripts/check-deps.sh
 | `Makefile` | Build and install system |
 | `.xinitrc` | Startup script for `startx` |
 | `dwm.desktop` | Session entry for display managers |
-| `install.sh` | Automated installer (Arch Linux) |
+| `install.sh` | Automated installer (Arch Linux, Void Linux) |
 | `polybar/` | Polybar config, themes, and fonts |
 | `config/` | Terminal, rofi, and app configurations |
 | `scripts/` | Helper scripts (keybinds viewer, dep checker, etc.) |

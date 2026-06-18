@@ -45,7 +45,7 @@ XORG_PKGS=(
 )
 
 RUNTIME_DEPS=(
-    rofi picom dunst feh flameshot dex mate-polkit alsa-utils
+    rofi picom dunst feh flameshot dex mate-polkit elogind alsa-utils
     git unzip xclip xorg-xprop thunar gvfs tumbler
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire pavucontrol gnome-keyring

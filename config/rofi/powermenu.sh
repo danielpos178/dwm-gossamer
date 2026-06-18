@@ -53,10 +53,24 @@ declare -A actions
 actions[lockscreen]="loginctl lock-session ${XDG_SESSION_ID-}"
 #actions[switchuser]="???"
 actions[logout]="loginctl terminate-session ${XDG_SESSION_ID-}"
-actions[suspend]="systemctl suspend"
-actions[hibernate]="systemctl hibernate"
-actions[reboot]="systemctl reboot"
-actions[shutdown]="systemctl poweroff"
+# Use loginctl (works with both systemd and elogind on Void Linux)
+if command -v systemctl &>/dev/null; then
+    actions[suspend]="systemctl suspend"
+    actions[hibernate]="systemctl hibernate"
+    actions[reboot]="systemctl reboot"
+    actions[shutdown]="systemctl poweroff"
+elif command -v loginctl &>/dev/null; then
+    actions[suspend]="loginctl suspend"
+    actions[hibernate]="loginctl hibernate"
+    actions[reboot]="loginctl reboot"
+    actions[shutdown]="loginctl poweroff"
+else
+    # Fallback for runit (Void Linux) — direct power commands
+    actions[suspend]="zzz"
+    actions[hibernate]="ZZZ"
+    actions[reboot]="reboot"
+    actions[shutdown]="poweroff"
+fi
 
 # By default, ask for confirmation for actions that are irreversible
 confirmations=(reboot shutdown logout)

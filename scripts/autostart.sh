@@ -9,11 +9,18 @@ xset s off
 xset s noblank
 xset -dpms
 
-# Export display env to systemd/dbus in parallel (both are IPC round-trips)
+# Export display env to session manager/dbus in parallel (both are IPC round-trips)
 if command -v systemctl >/dev/null 2>&1; then
     systemctl --user import-environment DISPLAY XAUTHORITY &
 fi
-dbus-update-activation-environment --systemd DISPLAY XAUTHORITY 2>/dev/null &
+# On Void Linux (runit/elogind), --systemd flag is not available; omit it
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+    if command -v systemctl >/dev/null 2>&1; then
+        dbus-update-activation-environment --systemd DISPLAY XAUTHORITY 2>/dev/null &
+    else
+        dbus-update-activation-environment DISPLAY XAUTHORITY 2>/dev/null &
+    fi
+fi
 wait
 
 # ── Phase 2: Background services ───────────────────────────────────────────────

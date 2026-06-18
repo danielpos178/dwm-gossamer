@@ -48,6 +48,15 @@ for pkg in "${RUNTIME_DEPS[@]}"; do
 done
 ok "Runtime dependencies installed."
 
+# ── elogind (seat management) ─────────────────────────────
+info "Enabling elogind for seat management..."
+if command -v elogind &>/dev/null || [ -d /usr/lib/elogind ]; then
+    enable_service "elogind"
+    ok "elogind enabled."
+else
+    warn "elogind not found — seat management may not work."
+fi
+
 # ── Qt / GTK theming ─────────────────────────────────────
 info "Installing Qt/GTK dark-mode dependencies..."
 # dconf: required for gsettings to persist GTK color-scheme changes
@@ -89,12 +98,17 @@ fi
 install_packages "$BAR_PKG" 2>/dev/null || warn "$BAR_PKG not found."
 command -v xdg-user-dirs-update &>/dev/null && xdg-user-dirs-update
 
-mkdir -p "$HOME/Pictures"
-if [ ! -d "$BG_DIR" ]; then
-    info "Downloading Nord wallpapers..."
-    git clone https://github.com/ChrisTitusTech/nord-background.git "$BG_DIR" 2>/dev/null \
-        && ok "Wallpapers downloaded to $BG_DIR" \
-        || warn "Failed to download wallpapers. Add your own to $BG_DIR."
+mkdir -p "$BG_DIR"
+if [ -z "$(ls -A "$BG_DIR" 2>/dev/null)" ]; then
+    info "Copying default wallpaper..."
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/config/background.jpg" ]; then
+        cp "$SCRIPT_DIR/config/background.jpg" "$BG_DIR/wallpaper.jpg" 2>/dev/null \
+            && ok "Default wallpaper copied to $BG_DIR" \
+            || warn "Failed to copy wallpaper. Add your own to $BG_DIR."
+    else
+        warn "No default wallpaper found. Add your own to $BG_DIR."
+    fi
 else
     ok "Wallpapers already present."
 fi

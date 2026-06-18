@@ -31,7 +31,18 @@ SERVICE_FILE="${SERVICE_DIR}/${SERVICE_NAME}.service"
 header "Pre-flight Checks"
 
 if ! command -v systemctl &>/dev/null; then
-    fail "systemctl not found — this script requires systemd"
+    # On Void Linux (runit), XDG autostart is handled by `dex` (already in autostart.sh)
+    if command -v dex &>/dev/null; then
+        pass "systemctl not found — using dex for XDG autostart (Void Linux / runit)"
+        echo ""
+        info "On Void Linux, XDG autostart is handled by 'dex' which is already"
+        info "launched in the dwm autostart.sh script. No extra setup needed."
+        info "To add autostart apps, place .desktop files in:"
+        echo "    ${CYAN}~/.config/autostart/${RESET}"
+        echo ""
+        exit 0
+    fi
+    fail "systemctl not found — this script requires systemd or dex (Void Linux)"
     exit 1
 fi
 pass "systemd available"

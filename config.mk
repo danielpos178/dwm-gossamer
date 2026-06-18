@@ -7,8 +7,9 @@ VERSION = 0.4
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-X11INC = /usr/X11R6/include
-X11LIB = /usr/X11R6/lib
+# Auto-detect X11 paths (Void Linux, Arch, etc. all use /usr)
+X11INC = /usr/include
+X11LIB = /usr/lib
 
 # Xinerama, comment if you don't want it
 XINERAMALIBS  = -lXinerama

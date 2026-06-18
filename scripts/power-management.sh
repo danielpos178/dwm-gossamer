@@ -48,6 +48,37 @@ bad()  { echo -e "  ${RED}✘${RESET}  $1"; }
 
 read_sys() { cat "$1" 2>/dev/null || echo "N/A"; }
 
+# ── Init system detection (systemd vs runit/elogind) ────
+has_systemd() { command -v systemctl &>/dev/null; }
+
+svc_is_active() {
+    if has_systemd; then
+        systemctl is-active "$1" &>/dev/null
+    else
+        # On runit, check if service symlink exists in /var/service
+        [ -L "/var/service/$1" ]
+    fi
+}
+
+svc_is_enabled() {
+    if has_systemd; then
+        systemctl is-enabled "$1" &>/dev/null
+    else
+        [ -L "/var/service/$1" ]
+    fi
+}
+
+# Detect package manager for install hints
+pkg_install_hint() {
+    if command -v pacman &>/dev/null; then
+        echo "sudo pacman -S $1"
+    elif command -v xbps-install &>/dev/null; then
+        echo "sudo xbps-install -S $1"
+    else
+        echo "Install $1 manually"
+    fi
+}
+
 # =============================================================================
 # 1. SYSTEM IDENTITY
 # =============================================================================
@@ -138,20 +169,36 @@ elif [[ "$MEM_SLEEP" == *"[deep]"* ]]; then
 fi
 
 echo
-info "Suspend hooks in /usr/lib/systemd/system-sleep/:"
-if ls /usr/lib/systemd/system-sleep/ &>/dev/null; then
-    for f in /usr/lib/systemd/system-sleep/*; do
-        info "  $(basename "$f")"
-    done
+if has_systemd; then
+    info "Suspend hooks in /usr/lib/systemd/system-sleep/:"
+    if ls /usr/lib/systemd/system-sleep/ &>/dev/null; then
+        for f in /usr/lib/systemd/system-sleep/*; do
+            info "  $(basename "$f")"
+        done
+    else
+        info "  (none)"
+    fi
 else
-    info "  (none)"
+    info "Suspend hooks: Void Linux uses /etc/rc.d/ scripts or elogind hooks"
+    if [ -d /etc/elogind/system-sleep ]; then
+        for f in /etc/elogind/system-sleep/*; do
+            info "  $(basename "$f")"
+        done
+    else
+        info "  (none)"
+    fi
 fi
 
 # =============================================================================
 # 4. LOGIND POWER EVENT HANDLING
 # =============================================================================
-hdr "Logind Power Event Configuration (/etc/systemd/logind.conf)"
-LOGIND_CONF="/etc/systemd/logind.conf"
+if has_systemd; then
+    hdr "Logind Power Event Configuration (/etc/systemd/logind.conf)"
+    LOGIND_CONF="/etc/systemd/logind.conf"
+else
+    hdr "elogind Power Event Configuration (/etc/elogind/logind.conf)"
+    LOGIND_CONF="/etc/elogind/logind.conf"
+fi
 ACTIVE_VALS=$(grep -v '^#' "$LOGIND_CONF" 2>/dev/null | grep -v '^$' | grep -v '^\[' || true)
 
 while IFS= read -r line; do
@@ -180,17 +227,34 @@ done <<< "$ACTIVE_VALS"
 # =============================================================================
 # 5. SYSTEMD SLEEP CONFIGURATION
 # =============================================================================
-hdr "Systemd Sleep Configuration (/etc/systemd/sleep.conf)"
-SLEEP_CONF="/etc/systemd/sleep.conf"
-SLEEP_ACTIVE=$(grep -v '^#' "$SLEEP_CONF" 2>/dev/null | grep -v '^$' | grep -v '^\[' || true)
-if [[ -z "$SLEEP_ACTIVE" ]]; then
-    info "All settings are default (no overrides in sleep.conf)"
-    info "Defaults: AllowSuspend=yes, AllowHibernation=yes, AllowHybridSleep=yes"
-    info "          SuspendMode=   SuspendState=mem standby freeze"
+if has_systemd; then
+    hdr "Systemd Sleep Configuration (/etc/systemd/sleep.conf)"
+    SLEEP_CONF="/etc/systemd/sleep.conf"
+    SLEEP_ACTIVE=$(grep -v '^#' "$SLEEP_CONF" 2>/dev/null | grep -v '^$' | grep -v '^\[' || true)
+    if [[ -z "$SLEEP_ACTIVE" ]]; then
+        info "All settings are default (no overrides in sleep.conf)"
+        info "Defaults: AllowSuspend=yes, AllowHibernation=yes, AllowHybridSleep=yes"
+        info "          SuspendMode=   SuspendState=mem standby freeze"
+    else
+        while IFS= read -r line; do
+            info "$line"
+        done <<< "$SLEEP_ACTIVE"
+    fi
 else
-    while IFS= read -r line; do
-        info "$line"
-    done <<< "$SLEEP_ACTIVE"
+    hdr "elogind Sleep Configuration (/etc/elogind/sleep.conf)"
+    ELOGIND_SLEEP="/etc/elogind/sleep.conf"
+    if [[ -f "$ELOGIND_SLEEP" ]]; then
+        ELOGIND_ACTIVE=$(grep -v '^#' "$ELOGIND_SLEEP" 2>/dev/null | grep -v '^$' | grep -v '^\[' || true)
+        if [[ -z "$ELOGIND_ACTIVE" ]]; then
+            info "All settings are default (no overrides in elogind sleep.conf)"
+        else
+            while IFS= read -r line; do
+                info "$line"
+            done <<< "$ELOGIND_ACTIVE"
+        fi
+    else
+        info "No elogind sleep.conf found — using defaults"
+    fi
 fi
 
 # =============================================================================
@@ -250,7 +314,11 @@ if command -v dkms &>/dev/null; then
     info "DisplayLink (evdi) note:"
     if [[ "$DKMS_OUT" == *"evdi"* ]]; then
         ok "evdi DKMS module present — DisplayLink suspend hook active"
-        info "  Hook: /usr/lib/systemd/system-sleep/displaylink.sh"
+        if has_systemd; then
+            info "  Hook: /usr/lib/systemd/system-sleep/displaylink.sh"
+        else
+            info "  Hook: /etc/elogind/system-sleep/displaylink.sh"
+        fi
         info "  Sends S/R signals to DisplayLinkManager on suspend/resume"
         # Check if module is actually loaded in current kernel
         if grep -q "^evdi " /proc/modules 2>/dev/null; then
@@ -298,28 +366,48 @@ fi
 # =============================================================================
 # 9. POWER MANAGEMENT SERVICES
 # =============================================================================
-hdr "Power Management Services"
-SERVICES=(upower.service tlp.service thermald.service auto-cpufreq.service \
-          tuned.service power-profiles-daemon.service acpid.service \
-          cpupower.service systemd-sleep.service)
-for svc in "${SERVICES[@]}"; do
-    STATE=$(systemctl is-active "$svc" 2>/dev/null || echo "not-found")
-    ENABLED=$(systemctl is-enabled "$svc" 2>/dev/null || echo "not-found")
-    case "$STATE" in
-        active)   ok  "$svc — active (enabled: $ENABLED)" ;;
-        inactive) info "$svc — inactive (enabled: $ENABLED)" ;;
-        *)        info "$svc — not installed" ;;
-    esac
-done
+if has_systemd; then
+    hdr "Power Management Services"
+    SERVICES=(upower.service tlp.service thermald.service auto-cpufreq.service \
+              tuned.service power-profiles-daemon.service acpid.service \
+              cpupower.service systemd-sleep.service)
+    for svc in "${SERVICES[@]}"; do
+        STATE=$(systemctl is-active "$svc" 2>/dev/null || echo "not-found")
+        ENABLED=$(systemctl is-enabled "$svc" 2>/dev/null || echo "not-found")
+        case "$STATE" in
+            active)   ok  "$svc — active (enabled: $ENABLED)" ;;
+            inactive) info "$svc — inactive (enabled: $ENABLED)" ;;
+            *)        info "$svc — not installed" ;;
+        esac
+    done
 
-echo
-if ! systemctl is-active tlp.service &>/dev/null && \
-   ! systemctl is-active auto-cpufreq.service &>/dev/null && \
-   ! systemctl is-active power-profiles-daemon.service &>/dev/null; then
-    warn "No advanced power manager (TLP / auto-cpufreq / power-profiles-daemon) is running"
-    info "Consider installing one for better battery life:"
-    info "  pacman -S tlp          # comprehensive power management"
-    info "  pacman -S auto-cpufreq # automatic CPU frequency + governor management"
+    echo
+    if ! systemctl is-active tlp.service &>/dev/null && \
+       ! systemctl is-active auto-cpufreq.service &>/dev/null && \
+       ! systemctl is-active power-profiles-daemon.service &>/dev/null; then
+        warn "No advanced power manager (TLP / auto-cpufreq / power-profiles-daemon) is running"
+        info "Consider installing one for better battery life:"
+        info "  $(pkg_install_hint tlp)          # comprehensive power management"
+        info "  $(pkg_install_hint auto-cpufreq) # automatic CPU frequency + governor management"
+    fi
+else
+    hdr "Power Management Services (runit/elogind)"
+    # Check common Void Linux power services
+    for svc in tlp acpid thermald; do
+        if [ -d "/etc/sv/$svc" ] && [ -L "/var/service/$svc" ]; then
+            ok "$svc — enabled (runit)"
+        elif [ -d "/etc/sv/$svc" ]; then
+            info "$svc — installed but not enabled"
+        else
+            info "$svc — not installed"
+        fi
+    done
+    echo
+    if ! [ -L "/var/service/tlp" ]; then
+        warn "TLP not enabled — consider enabling for better battery life"
+        info "  Enable with: sudo ln -s /etc/sv/tlp /var/service/tlp"
+        info "  Or install:  $(pkg_install_hint tlp)"
+    fi
 fi
 
 # If TLP is installed, show key active settings
@@ -493,7 +581,7 @@ hdr "Summary & Recommendations"
 echo -e "${BOLD}Current state:${RESET}"
 info "Sleep mode    : $(read_sys /sys/power/mem_sleep | tr -d '[]' | xargs) (s2idle active)"
 info "CPU governor  : $(read_sys /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-info "Lid action    : $(grep -v '^#' /etc/systemd/logind.conf 2>/dev/null | grep HandleLidSwitch= | head -1 | cut -d= -f2 || echo default)"
+info "Lid action    : $(grep -v '^#' "$LOGIND_CONF" 2>/dev/null | grep HandleLidSwitch= | head -1 | cut -d= -f2 || echo default)"
 EVDI_VER=$(dkms status 2>/dev/null | awk -F/ '/evdi/{v=$2} END{print v}' | awk -F',' '{print $1}')
 info "DKMS evdi     : ${EVDI_VER:-N/A}"
 if command -v xset &>/dev/null; then
@@ -518,15 +606,19 @@ else
 fi
 
 # 2. Lid-close suspend
-LID_ACTION=$(grep -v '^#' /etc/systemd/logind.conf 2>/dev/null | awk -F= '/^HandleLidSwitch=/{print $2}' | tail -1)
+LID_ACTION=$(grep -v '^#' "$LOGIND_CONF" 2>/dev/null | awk -F= '/^HandleLidSwitch=/{print $2}' | tail -1)
 if [[ "$LID_ACTION" == "suspend" || "$LID_ACTION" == "lock" ]]; then
     ok "Lid-close action already set to: $LID_ACTION"
 else
     REC_N=$((REC_N + 1))
     echo -e "\n  ${YELLOW}${REC_N}. Enable lid-close suspend:${RESET}"
-    echo "     # Edit /etc/systemd/logind.conf:"
+    echo "     # Edit $LOGIND_CONF:"
     echo "     #   HandleLidSwitch=suspend"
-    echo "     sudo systemctl restart systemd-logind"
+    if has_systemd; then
+        echo "     sudo systemctl restart systemd-logind"
+    else
+        echo "     sudo sv restart elogind"
+    fi
 fi
 
 # 3. TLP install + config
@@ -539,7 +631,7 @@ _tlp_conf_ok() {
 TLP_INSTALLED=false
 command -v tlp &>/dev/null && TLP_INSTALLED=true
 TLP_ENABLED=false
-systemctl is-enabled tlp.service &>/dev/null && TLP_ENABLED=true
+svc_is_enabled tlp && TLP_ENABLED=true
 TLP_CONF_OK=false
 if $TLP_INSTALLED && \
    _tlp_conf_ok "CPU_ENERGY_PERF_POLICY_ON_BAT" "power" && \
@@ -553,7 +645,11 @@ if $TLP_INSTALLED && $TLP_ENABLED && $TLP_CONF_OK; then
 elif $TLP_INSTALLED && $TLP_CONF_OK && ! $TLP_ENABLED; then
     REC_N=$((REC_N + 1))
     echo -e "\n  ${YELLOW}${REC_N}. Enable TLP service (config is correct but service is disabled):${RESET}"
-    echo "     sudo systemctl enable --now tlp"
+    if has_systemd; then
+        echo "     sudo systemctl enable --now tlp"
+    else
+        echo "     sudo ln -s /etc/sv/tlp /var/service/tlp && sudo sv start tlp"
+    fi
     echo "     # Or run: sudo bash power-management.sh --apply-tlp"
 elif $TLP_INSTALLED && ! $TLP_CONF_OK; then
     REC_N=$((REC_N + 1))
@@ -567,9 +663,8 @@ elif $TLP_INSTALLED && ! $TLP_CONF_OK; then
 else
     REC_N=$((REC_N + 1))
     echo -e "\n  ${YELLOW}${REC_N}. Install & configure TLP:${RESET}"
-    echo "     sudo pacman -S tlp && sudo systemctl enable --now tlp"
+    echo "     $(pkg_install_hint tlp)"
     echo "     # Then run: sudo bash power-management.sh --apply-tlp"
-    echo "     # or: sudo pacman -S auto-cpufreq && sudo systemctl enable --now auto-cpufreq"
 fi
 
 # 4. USB wakeup
@@ -659,7 +754,7 @@ if $APPLY_TLP; then
     TLP_CONF="/etc/tlp.conf"
 
     if ! command -v tlp &>/dev/null; then
-        bad "tlp is not installed. Install with: pacman -S tlp"
+        bad "tlp is not installed. Install with: $(pkg_install_hint tlp)"
         exit 1
     fi
 
@@ -726,25 +821,43 @@ if $APPLY_TLP; then
     # Mask conflicting power managers before enabling TLP
     echo
     info "Checking for conflicting power managers ..."
-    for conflict in power-profiles-daemon.service auto-cpufreq.service; do
-        if systemctl is-enabled "$conflict" &>/dev/null; then
-            systemctl disable --now "$conflict" 2>/dev/null || true
-            systemctl mask "$conflict" 2>/dev/null || true
-            warn "Masked $conflict (conflicts with TLP)"
-        else
-            ok "$conflict not enabled (no conflict)"
-        fi
-    done
+    if has_systemd; then
+        for conflict in power-profiles-daemon.service auto-cpufreq.service; do
+            if systemctl is-enabled "$conflict" &>/dev/null; then
+                systemctl disable --now "$conflict" 2>/dev/null || true
+                systemctl mask "$conflict" 2>/dev/null || true
+                warn "Masked $conflict (conflicts with TLP)"
+            else
+                ok "$conflict not enabled (no conflict)"
+            fi
+        done
+    else
+        info "Skipping systemd service checks (runit/elogind detected)"
+    fi
 
     # Enable TLP service so settings persist across reboots
     echo
-    if systemctl is-enabled tlp.service &>/dev/null; then
-        ok "tlp.service already enabled"
-    else
-        if systemctl enable tlp.service 2>/dev/null; then
-            ok "tlp.service enabled (will apply settings on every boot)"
+    if has_systemd; then
+        if systemctl is-enabled tlp.service &>/dev/null; then
+            ok "tlp.service already enabled"
         else
-            warn "Could not enable tlp.service — check: systemctl status tlp"
+            if systemctl enable tlp.service 2>/dev/null; then
+                ok "tlp.service enabled (will apply settings on every boot)"
+            else
+                warn "Could not enable tlp.service — check: systemctl status tlp"
+            fi
+        fi
+    else
+        if [ -L "/var/service/tlp" ]; then
+            ok "tlp already enabled (runit service active)"
+        else
+            if [ -d "/etc/sv/tlp" ]; then
+                sudo ln -s /etc/sv/tlp /var/service/tlp 2>/dev/null \
+                    && ok "tlp enabled via runit (will apply settings on every boot)" \
+                    || warn "Could not enable tlp — check: ls /etc/sv/tlp"
+            else
+                warn "tlp service directory not found at /etc/sv/tlp"
+            fi
         fi
     fi
 
@@ -776,7 +889,11 @@ if $APPLY_TLP; then
     fi
 
     echo
-    ok "Settings ARE persistent: written to $TLP_CONF + tlp.service enabled."
+    if has_systemd; then
+        ok "Settings ARE persistent: written to $TLP_CONF + tlp.service enabled."
+    else
+        ok "Settings ARE persistent: written to $TLP_CONF + tlp enabled via runit."
+    fi
     info "To revert, remove the block at the end of $TLP_CONF and run: tlp start"
 fi
 
