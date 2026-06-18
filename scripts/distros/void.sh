@@ -50,7 +50,7 @@ disable_service() {
 # All package names verified against void-linux/void-packages
 
 BUILD_DEPS=(
-    base-devel libX11-devel libxft-devel libXinerama-devel libXrender-devel
+    base-devel libX11-devel libXft-devel libXinerama-devel libXrender-devel
     imlib2-devel libxcb-devel xcb-util-devel freetype-devel fontconfig-devel
 )
 
