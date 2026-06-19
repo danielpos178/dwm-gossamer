@@ -10,7 +10,7 @@ The easiest way is via [Linutil](https://christitus.com/linux):
 curl -fsSL https://christitus.com/linux | sh
 ```
 
-In the TUI, press `v` to multi-select, then select **dwm**, **rofi**, **bash prompt**, and **ghostty**. Press `Enter` to install.
+In the TUI, press `v` to multi-select, then select **dwm**, **rofi**, **bash prompt**, and **alacritty**. Press `Enter` to install.
 
 ![linutil-appinstall](images/linutil-applications.png)
 
@@ -35,7 +35,7 @@ sudo pacman -S --needed rofi picom dunst feh flameshot dex mate-polkit alsa-util
 
 **Terminal** (pick one — alacritty is the default):
 ```bash
-sudo pacman -S alacritty   # or: ghostty, kitty
+sudo pacman -S alacritty   # or: kitty
 ```
 
 **Status bar:**

@@ -83,8 +83,9 @@ term_color13    = "#B48EAD"
 term_color14    = "#8FBCBB"
 term_color15    = "#ECEFF4"
 
-ghostty_theme   = "Nord"
+alacritty_theme   = "Nord"
 rofi_theme      = "sidetab-nord"
+gtk_theme       = "Nordic"
 dark_mode       = true
 
 polybar_bg      = "#2e3440"
@@ -124,8 +125,9 @@ term_color13    = "#FF92DF"
 term_color14    = "#A4FFFF"
 term_color15    = "#FFFFFF"
 
-ghostty_theme   = "Dracula"
+alacritty_theme   = "Dracula"
 rofi_theme      = "sidetab-dracula"
+gtk_theme       = "Dracula"
 dark_mode       = true
 
 polybar_bg      = "#282A36"
@@ -167,6 +169,7 @@ term_color15    = "#ebdbb2"
 
 alacritty_theme = "gruvbox-dark-hard"
 rofi_theme      = "sidetab-gruvbox"
+gtk_theme       = "Gruvbox-Dark-Hard"
 dark_mode       = true
 
 polybar_bg      = "#1d2021"
@@ -206,8 +209,9 @@ term_color13    = "#F5C2E7"
 term_color14    = "#94E2D5"
 term_color15    = "#A6ADC8"
 
-ghostty_theme   = "Catppuccin Mocha"
+alacritty_theme   = "Catppuccin Mocha"
 rofi_theme      = "sidetab-catppuccin"
+gtk_theme       = "Catppuccin-Mocha-Standard-Dark"
 dark_mode       = true
 
 polybar_bg      = "#1E1E2E"
@@ -247,8 +251,9 @@ term_color13    = "#BB9AF7"
 term_color14    = "#7DCFFF"
 term_color15    = "#C0CAF5"
 
-ghostty_theme   = "TokyoNight"
+alacritty_theme   = "TokyoNight"
 rofi_theme      = "sidetab-tokyonight"
+gtk_theme       = "Tokyonight-Dark-BL"
 dark_mode       = true
 
 polybar_bg      = "#1A1B26"
@@ -288,8 +293,9 @@ term_color13    = "#C678DD"
 term_color14    = "#56B6C2"
 term_color15    = "#FFFFFF"
 
-ghostty_theme   = "One Dark"
+alacritty_theme   = "One Dark"
 rofi_theme      = "sidetab-onedark"
+gtk_theme       = "OneDark"
 dark_mode       = true
 
 polybar_bg      = "#282C34"
@@ -329,8 +335,9 @@ term_color13    = "#6C71C4"
 term_color14    = "#93A1A1"
 term_color15    = "#FDF6E3"
 
-ghostty_theme   = "Solarized Dark Patched"
+alacritty_theme   = "Solarized Dark Patched"
 rofi_theme      = "sidetab-solarized"
+gtk_theme       = "Solarized-Dark"
 dark_mode       = true
 
 polybar_bg      = "#002B36"
@@ -370,8 +377,9 @@ term_color13    = "#C4A7E7"
 term_color14    = "#EBBCBA"
 term_color15    = "#E0DEF4"
 
-ghostty_theme   = "Rose Pine"
+alacritty_theme   = "Rose Pine"
 rofi_theme      = "sidetab-rosepine"
+gtk_theme       = "Rose-Pine"
 dark_mode       = true
 
 polybar_bg      = "#191724"
@@ -411,8 +419,9 @@ term_color13    = "#D699B6"
 term_color14    = "#83C092"
 term_color15    = "#D3C6AA"
 
-ghostty_theme   = "Everforest Dark"
+alacritty_theme   = "Everforest Dark"
 rofi_theme      = "sidetab-everforest"
+gtk_theme       = "Everforest-Dark-BL"
 dark_mode       = true
 
 polybar_bg      = "#2D353B"
@@ -452,8 +461,9 @@ term_color13    = "#CC88CC"
 term_color14    = "#88CCCC"
 term_color15    = "#FFFFFF"
 
-ghostty_theme   = "Monochrome"
+alacritty_theme   = "Monochrome"
 rofi_theme      = "sidetab-monochrome"
+gtk_theme       = "Adwaita-dark"
 dark_mode       = true
 
 polybar_bg      = "#1A1A1A"
@@ -497,8 +507,9 @@ term_color13    = "#EA76CB"
 term_color14    = "#179299"
 term_color15    = "#BCC0CC"
 
-ghostty_theme   = "Catppuccin Latte"
+alacritty_theme   = "Catppuccin Latte"
 rofi_theme      = "sidetab-catppuccin"
+gtk_theme       = "Catppuccin-Latte-Standard-Base"
 dark_mode       = false
 
 polybar_bg      = "#EFF1F5"
@@ -538,8 +549,9 @@ term_color13    = "#8F3F71"
 term_color14    = "#427B58"
 term_color15    = "#3C3836"
 
-ghostty_theme   = "Gruvbox Light"
+alacritty_theme   = "Gruvbox Light"
 rofi_theme      = "sidetab-gruvbox"
+gtk_theme       = "Gruvbox-Light-Hard"
 dark_mode       = false
 
 polybar_bg      = "#FBF1C7"
@@ -579,8 +591,9 @@ term_color13    = "#6C71C4"
 term_color14    = "#93A1A1"
 term_color15    = "#FDF6E3"
 
-ghostty_theme   = "iTerm2 Solarized Light"
+alacritty_theme   = "iTerm2 Solarized Light"
 rofi_theme      = "sidetab-solarized"
+gtk_theme       = "Solarized-Light"
 dark_mode       = false
 
 polybar_bg      = "#FDF6E3"
@@ -620,8 +633,9 @@ term_color13    = "#907AA9"
 term_color14    = "#D7827E"
 term_color15    = "#575279"
 
-ghostty_theme   = "Rose Pine Dawn"
+alacritty_theme   = "Rose Pine Dawn"
 rofi_theme      = "sidetab-rosepine"
+gtk_theme       = "Rose-Pine-Dawn"
 dark_mode       = false
 
 polybar_bg      = "#FAF4ED"
@@ -661,8 +675,9 @@ term_color13    = "#9854F1"
 term_color14    = "#007197"
 term_color15    = "#3760BF"
 
-ghostty_theme   = "TokyoNight Day"
+alacritty_theme   = "TokyoNight Day"
 rofi_theme      = "sidetab-tokyonight"
+gtk_theme       = "Tokyonight-Light-BL"
 dark_mode       = false
 
 polybar_bg      = "#E1E2E7"

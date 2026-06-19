@@ -82,6 +82,24 @@ if [ -d "$REPO_DIR/config/polybar/fonts" ]; then
 fi
 ok "Fonts installed."
 
+# ── GTK Theme (Gruvbox) ──────────────────────────────────
+info "Installing Gruvbox GTK theme..."
+GTK_THEME_DIR="$HOME/.themes/Gruvbox-Dark-Hard"
+if [ ! -d "$GTK_THEME_DIR" ]; then
+    mkdir -p "$HOME/.themes"
+    if command -v git &>/dev/null; then
+        git clone --depth 1 https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme.git /tmp/gruvbox-gtk 2>/dev/null \
+            && cp -r /tmp/gruvbox-gtk/themes/Gruvbox-Dark-Hard "$GTK_THEME_DIR" 2>/dev/null \
+            && ok "Gruvbox GTK theme installed." \
+            || warn "Failed to install Gruvbox GTK theme."
+        rm -rf /tmp/gruvbox-gtk 2>/dev/null
+    else
+        warn "git not found — install Gruvbox GTK theme manually."
+    fi
+else
+    ok "Gruvbox GTK theme already installed."
+fi
+
 # ── Terminal emulator ────────────────────────────────────
 terminal=""
 for t in alacritty kitty; do command -v "$t" &>/dev/null && { terminal="$t"; break; }; done

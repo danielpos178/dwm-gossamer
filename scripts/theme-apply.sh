@@ -4,7 +4,7 @@
 # Called automatically by DWM on config reload (SIGUSR1 / file save).
 # Can also be run manually: theme-apply.sh
 #
-# Updates: alacritty · kitty · ghostty · rofi · polybar
+# Updates: alacritty · kitty · rofi · polybar
 
 set -euo pipefail
 
@@ -66,8 +66,8 @@ TERM_C13="$(theme_get term_color13)"
 TERM_C14="$(theme_get term_color14)"
 TERM_C15="$(theme_get term_color15)"
 
-GHOSTTY_THEME="$(theme_get ghostty_theme)"
 ROFI_THEME="$(theme_get rofi_theme)"
+GTK_THEME="$(theme_get gtk_theme)"
 
 PB_BG="$(theme_get polybar_bg)"
 PB_FG="$(theme_get polybar_fg)"
@@ -179,29 +179,6 @@ fi
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GHOSTTY — update ~/.config/ghostty/config
-# ══════════════════════════════════════════════════════════════════════════════
-GHOSTTY_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
-# Ensure custom themes shipped with dwm-titus are present
-GHOSTTY_THEMES_SRC="$HOME/.local/share/dwm-titus/ghostty/themes"
-GHOSTTY_THEMES_DST="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/themes"
-if [[ -d "$GHOSTTY_THEMES_SRC" ]]; then
-    mkdir -p "$GHOSTTY_THEMES_DST"
-    cp -r "$GHOSTTY_THEMES_SRC/"* "$GHOSTTY_THEMES_DST/" 2>/dev/null || true
-fi
-if [[ -n "$GHOSTTY_THEME" && -f "$GHOSTTY_CFG" ]]; then
-    if grep -q "^theme[[:space:]]*=" "$GHOSTTY_CFG"; then
-        sed -i "s|^theme[[:space:]]*=.*|theme = $GHOSTTY_THEME|" "$GHOSTTY_CFG"
-    else
-        echo "theme = $GHOSTTY_THEME" >> "$GHOSTTY_CFG"
-    fi
-    # Remove any manually set background/foreground so the named theme controls colors
-    sed -i '/^background[[:space:]]*=[^=]/d' "$GHOSTTY_CFG"
-    sed -i '/^foreground[[:space:]]*=[^=]/d' "$GHOSTTY_CFG"
-fi
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 # ROFI — update @theme line in ~/.config/rofi/config.rasi
 # ══════════════════════════════════════════════════════════════════════════════
 ROFI_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/config.rasi"
@@ -266,12 +243,19 @@ fi
 # ══════════════════════════════════════════════════════════════════════════════
 if [[ "$DARK_MODE" == "true" ]]; then
     GTK_COLOR_SCHEME="prefer-dark"
-    GTK_THEME_NAME="Adwaita-dark"
     GTK_DARK_PREF=1
 else
     GTK_COLOR_SCHEME="default"
-    GTK_THEME_NAME="Adwaita"
     GTK_DARK_PREF=0
+fi
+
+# Use gtk_theme from themes.toml, fallback to Adwaita
+if [[ -n "$GTK_THEME" ]]; then
+    GTK_THEME_NAME="$GTK_THEME"
+elif [[ "$DARK_MODE" == "true" ]]; then
+    GTK_THEME_NAME="Adwaita-dark"
+else
+    GTK_THEME_NAME="Adwaita"
 fi
 
 # Helper: set or add a key in a [Settings] ini file without destroying other settings
@@ -334,17 +318,31 @@ EOF
 
 # Update qt5ct / qt6ct color scheme config if that tool is the active theme
 if [[ "$QT_PLATFORM_THEME" == "qt5ct" || "$QT_PLATFORM_THEME" == "qt6ct" ]]; then
-    QT_CT_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/${QT_PLATFORM_THEME}/${QT_PLATFORM_THEME}.conf"
-    if [[ -f "$QT_CT_CONF" ]]; then
-        if [[ "$DARK_MODE" == "true" ]]; then
-            QT_CT_SCHEME="/usr/share/${QT_PLATFORM_THEME}/colors/darker.conf"
-        else
-            QT_CT_SCHEME=""
-        fi
-        if grep -q '^color_scheme_path' "$QT_CT_CONF"; then
-            sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_CT_SCHEME|" "$QT_CT_CONF"
-        else
-            sed -i "/^\[Appearance\]/a color_scheme_path=${QT_CT_SCHEME}" "$QT_CT_CONF"
+    QT_CT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/${QT_PLATFORM_THEME}"
+    QT_CT_CONF="${QT_CT_DIR}/${QT_PLATFORM_THEME}.conf"
+    QT_CT_SCHEME=""
+
+    # Generate a gruvbox color scheme if the theme contains "gruvbox"
+    if [[ "$GTK_THEME" == *gruvbox* || "$GTK_THEME" == *Gruvbox* ]]; then
+        QT_CT_SCHEME="${QT_CT_DIR}/colors/gruvbox-dark-hard.conf"
+        mkdir -p "${QT_CT_DIR}/colors"
+        cat > "$QT_CT_SCHEME" <<QTEOF
+[ColorScheme]
+active_colors=#ff1d2021, #ffebdbb2, #ff1d2021, #ff504945, #ffcc241d, #ffb16286, #ff98971a, #ffebdbb2, #fffabd2f, #fffbf1c7, #ff1d2021, #ffebdbb2, #ff458588, #ffebdbb2, #ff689d6a, #ff1d2021, #ffebdbb2, #fffb4934, #ff1d2021, #fffabd2f
+disabled_colors=#ff1d2021, #ff928374, #ff1d2021, #ff504945, #ffcc241d, #ffb16286, #ff98971a, #ff928374, #fffabd2f, #fffbf1c7, #ff1d2021, #ff928374, #ff458588, #ff928374, #ff689d6a, #ff1d2021, #ff928374, #fffb4934, #ff1d2021, #fffabd2f
+inactive_colors=#ff1d2021, #ffebdbb2, #ff1d2021, #ff504945, #ffcc241d, #ffb16286, #ff98971a, #ffebdbb2, #fffabd2f, #fffbf1c7, #ff1d2021, #ffebdbb2, #ff458588, #ffebdbb2, #ff689d6a, #ff1d2021, #ffebdbb2, #fffb4934, #ff1d2021, #fffabd2f
+QTEOF
+    elif [[ "$DARK_MODE" == "true" ]]; then
+        QT_CT_SCHEME="/usr/share/${QT_PLATFORM_THEME}/colors/darker.conf"
+    fi
+
+    if [[ -n "$QT_CT_SCHEME" ]]; then
+        if [[ -f "$QT_CT_CONF" ]]; then
+            if grep -q '^color_scheme_path' "$QT_CT_CONF"; then
+                sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_CT_SCHEME|" "$QT_CT_CONF"
+            else
+                sed -i "/^\[Appearance\]/a color_scheme_path=${QT_CT_SCHEME}" "$QT_CT_CONF"
+            fi
         fi
     fi
 fi

@@ -46,9 +46,6 @@ disable_service() {
     fi
 }
 
-# ── Package Lists ────────────────────────────────────────
-# All package names verified against void-linux/void-packages
-
 BUILD_DEPS=(
     base-devel libX11-devel libXft-devel libXinerama-devel libXrender-devel
     imlib2-devel libxcb-devel xcb-util-devel freetype-devel fontconfig-devel
@@ -59,8 +56,8 @@ XORG_PKGS=(
 )
 
 RUNTIME_DEPS=(
-    rofi picom dunst feh dex mate-polkit elogind elogind-runit alsa-utils
-    git unzip xclip xprop Thunar gvfs tumbler
+    rofi picom dunst feh flameshot dex mate-polkit elogind alsa-utils
+    git unzip xclip xprop Thunar gvfs tumbler arandr
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire pavucontrol gnome-keyring
     NetworkManager network-manager-applet libnotify rsync

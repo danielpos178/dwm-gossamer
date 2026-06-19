@@ -40,7 +40,7 @@ fc-cache -fv
 
 ## Terminal Won't Open (`Super`+`X`)
 
-- Install a terminal: `sudo pacman -S ghostty`
+- Install a terminal: `sudo pacman -S alacritty`
 - Or change the terminal in `config/hotkeys.toml`:
   ```toml
   [vars]

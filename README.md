@@ -210,7 +210,7 @@ Key things to customize in `config.h`:
 - Install icon fonts: `cp -r polybar/fonts/* ~/.local/share/fonts/ && fc-cache -fv`
 
 **Terminal doesn't open (SUPER+X):**
-- Install a terminal emulator (alacritty, ghostty, kitty, or st)
+- Install a terminal emulator (alacritty, kitty, or st)
 - Or edit `config.h` → `termcmd[]` to use your preferred terminal
 
 **Multi-monitor issues:**

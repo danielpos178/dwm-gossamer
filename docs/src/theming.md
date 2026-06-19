@@ -57,7 +57,7 @@ Each `[theme.name]` section sets colors for all components:
 | `selfgcolor` / `selbgcolor` / `selbordercolor` | Focused window and active tag |
 | `term_bg` / `term_fg` / `term_cursor` | Terminal background, text, cursor |
 | `term_color0`–`term_color15` | Full 16-color terminal palette |
-| `ghostty_theme` | Ghostty built-in theme name |
+| `alacritty_theme` | Alacritty built-in theme name |
 | `rofi_theme` | Rofi `.rasi` theme (filename without extension) |
 | `polybar_bg` / `polybar_fg` / `polybar_accent` / `polybar_urgent` | Polybar colors |
 | `dark_mode` | GTK dark preference (`true` / `false`) |
@@ -82,7 +82,7 @@ term_fg         = "#cdd6f4"
 term_cursor     = "#f5e0dc"
 # ... term_color0–15 ...
 
-ghostty_theme   = "Catppuccin Mocha"
+alacritty_theme   = "Catppuccin Mocha"
 rofi_theme      = "sidetab-catppuccin"
 polybar_bg      = "#1e1e2e"
 polybar_fg      = "#cdd6f4"
