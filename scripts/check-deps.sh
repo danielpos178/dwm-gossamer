@@ -145,6 +145,14 @@ check_cmd "dex"
 check_cmd "amixer"
 echo ""
 
+# ── Audio stack ─────────────────────────────────────────
+echo "Audio Stack:"
+check_cmd "pipewire"
+check_cmd "wpctl"
+check_cmd "wireplumber"
+check_cmd "pavucontrol"
+echo ""
+
 # ── Terminal emulators ──────────────────────────────────
 echo "Terminal Emulators (at least one required):"
 TERM_FOUND=0

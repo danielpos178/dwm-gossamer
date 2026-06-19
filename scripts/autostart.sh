@@ -40,6 +40,20 @@ picom -b 2>/dev/null &
 # Notification daemon
 dunst 2>/dev/null &
 
+# PipeWire audio (needed on non-systemd systems; harmless on systemd if already running)
+if command -v pipewire &>/dev/null && ! pgrep -x pipewire &>/dev/null; then
+    pipewire 2>/dev/null &
+    sleep 0.5
+    if command -v wireplumber &>/dev/null; then
+        wireplumber 2>/dev/null &
+    elif command -v pipewire-media-session &>/dev/null; then
+        pipewire-media-session 2>/dev/null &
+    fi
+    if command -v pipewire-pulse &>/dev/null; then
+        pipewire-pulse 2>/dev/null &
+    fi
+fi
+
 # Polkit authentication agent (try common agents)
 for agent in \
     /usr/lib/mate-polkit/polkit-mate-authentication-agent-1 \

@@ -52,14 +52,15 @@ BUILD_DEPS=(
 )
 
 XORG_PKGS=(
-    xorg-server xinit xrandr xsetroot xset
+    xorg-server xinit xrandr xsetroot xset xauth
+    xf86-input-libinput libinput
 )
 
 RUNTIME_DEPS=(
     rofi picom dunst feh flameshot dex mate-polkit elogind alsa-utils
     git unzip xclip xprop Thunar gvfs tumbler arandr
     thunar-archive-plugin nwg-look xdg-user-dirs
-    xdg-desktop-portal-gtk pipewire pavucontrol gnome-keyring
+    xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring
     NetworkManager network-manager-applet libnotify rsync
 )
 

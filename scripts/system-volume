@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# System-wide volume control — detects PipeWire, PulseAudio, or ALSA
+# Usage: system-volume {up|down|mute}
+
+STEP=5
+ACTION="$1"
+
+if [[ -z "$ACTION" ]]; then
+    echo "Usage: $0 {up|down|mute}"
+    exit 1
+fi
+
+if command -v wpctl &>/dev/null && pgrep -x pipewire &>/dev/null; then
+    case "$ACTION" in
+        up)   wpctl set-volume @DEFAULT_AUDIO_SINK@ "${STEP}%+" 2>/dev/null ;;
+        down) wpctl set-volume @DEFAULT_AUDIO_SINK@ "${STEP}%-" 2>/dev/null ;;
+        mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle 2>/dev/null ;;
+    esac
+elif command -v pactl &>/dev/null && (pgrep -x pulseaudio &>/dev/null || pgrep -x pipewire &>/dev/null); then
+    case "$ACTION" in
+        up)   pactl set-sink-volume @DEFAULT_SINK@ "+${STEP}%" 2>/dev/null ;;
+        down) pactl set-sink-volume @DEFAULT_SINK@ "-${STEP}%" 2>/dev/null ;;
+        mute) pactl set-sink-mute @DEFAULT_SINK@ toggle 2>/dev/null ;;
+    esac
+elif command -v amixer &>/dev/null; then
+    case "$ACTION" in
+        up)   amixer sset Master "${STEP}%+" unmute >/dev/null 2>&1 ;;
+        down) amixer sset Master "${STEP}%-" unmute >/dev/null 2>&1 ;;
+        mute) amixer sset Master toggle >/dev/null 2>&1 ;;
+    esac
+else
+    echo "No audio backend found (need wpctl, pactl, or amixer)." >&2
+    exit 1
+fi

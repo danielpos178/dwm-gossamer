@@ -3154,7 +3154,7 @@ reload_config(void)
 			if (home) {
 				snprintf(script, sizeof(script),
 				         "%s/.local/share/dwm-titus/scripts/theme-apply.sh", home);
-				execl("/bin/sh", "sh", script, (char *)NULL);
+				execl("/bin/bash", "bash", script, (char *)NULL);
 			}
 			_exit(0);
 		}

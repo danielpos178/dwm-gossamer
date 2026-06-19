@@ -78,6 +78,33 @@ else
     warn "elogind not found — seat management may not work."
 fi
 
+# ── PipeWire audio ────────────────────────────────────────
+info "Setting up PipeWire audio..."
+if command -v pipewire &>/dev/null; then
+    if command -v systemctl &>/dev/null; then
+        # systemd: enable PipeWire user services for the login user
+        TARGET_USER="${SUDO_USER:-$USER}"
+        if [ "$TARGET_USER" != "root" ]; then
+            sudo loginctl enable-linger "$TARGET_USER" 2>/dev/null || true
+            for svc in pipewire pipewire-pulse wireplumber; do
+                sudo -u "$TARGET_USER" systemctl --user enable "${svc}.service" 2>/dev/null \
+                    || true
+            done
+            ok "PipeWire user services enabled for $TARGET_USER."
+        else
+            warn "Running as root — enable PipeWire user services manually for your user."
+        fi
+    else
+        # runit (Void Linux): enable system-level PipeWire services if available
+        for svc in pipewire wireplumber pipewire-pulse; do
+            enable_service "$svc" 2>/dev/null || true
+        done
+        ok "PipeWire runit services enabled."
+    fi
+else
+    warn "PipeWire not found — audio may not work."
+fi
+
 # ── Qt / GTK theming ─────────────────────────────────────
 info "Installing Qt/GTK dark-mode dependencies..."
 install_packages "${THEME_DEPS[0]}" 2>/dev/null \
@@ -146,6 +173,17 @@ else
     done
     enable_service "$DM_SERVICE"
     ok "LightDM installed and enabled."
+fi
+
+# ── Essential system services (runit/Void Linux) ──────────
+if ! command -v systemctl &>/dev/null; then
+    info "Enabling essential runit services..."
+    enable_service "dbus" 2>/dev/null \
+        && ok "dbus enabled." \
+        || warn "dbus service not found — D-Bus may not start automatically."
+    enable_service "NetworkManager" 2>/dev/null \
+        && ok "NetworkManager enabled." \
+        || warn "NetworkManager service not found — networking may not work."
 fi
 
 # ── LightDM greeter config ───────────────────────────────
