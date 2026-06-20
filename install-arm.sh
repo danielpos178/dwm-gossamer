@@ -167,12 +167,29 @@ if [ -n "$currentdm" ]; then
     ok "Display manager already installed: $currentdm"
 else
     info "No display manager found — installing LightDM..."
-    for pkg in "${DM_PKGS[@]}"; do
+    for pkg in lightdm; do
         install_packages "$pkg" 2>/dev/null \
             || warn "Package '$pkg' not found — skipping."
     done
     enable_service "$DM_SERVICE"
     ok "LightDM installed and enabled."
+fi
+
+# ── LightDM greeter ──────────────────────────────────────
+# Try slick-greeter first, fall back to gtk-greeter
+GREETER_SESSION="lightdm-slick-greeter"
+if ! pacman -Qi lightdm-slick-greeter &>/dev/null 2>&1 && \
+   ! xbps-query -l 2>/dev/null | command grep -q "^ii lightdm-slick-greeter "; then
+    info "Installing slick greeter..."
+    install_packages lightdm-slick-greeter 2>/dev/null \
+        && ok "lightdm-slick-greeter installed." \
+        || { warn "lightdm-slick-greeter not found — falling back to gtk-greeter."
+             GREETER_SESSION="lightdm-gtk-greeter"
+             install_packages lightdm-gtk-greeter 2>/dev/null \
+                 && ok "lightdm-gtk-greeter installed." \
+                 || warn "No greeter found — install lightdm-slick-greeter or lightdm-gtk-greeter manually."; }
+else
+    ok "Greeter already installed: $GREETER_SESSION"
 fi
 
 # ── Essential system services (runit/Void Linux) ──────────
@@ -188,8 +205,13 @@ fi
 
 # ── LightDM greeter config ───────────────────────────────
 if command -v lightdm &>/dev/null; then
-    info "Deploying LightDM GTK greeter config..."
+    info "Deploying LightDM greeter config..."
     sudo make -C "$REPO_DIR/lightdm" install
+    # Patch greeter-session to match what was actually installed
+    if [ -n "${GREETER_SESSION:-}" ]; then
+        sudo sed -i "s|^greeter-session=.*|greeter-session=$GREETER_SESSION|" \
+            /etc/lightdm/lightdm.conf
+    fi
     ok "LightDM config deployed."
 fi
 
