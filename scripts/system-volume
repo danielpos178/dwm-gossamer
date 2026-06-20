@@ -2,7 +2,7 @@
 # System-wide volume control — detects PipeWire, PulseAudio, or ALSA
 # Usage: system-volume {up|down|mute}
 
-STEP=5
+STEP=2
 ACTION="$1"
 
 if [[ -z "$ACTION" ]]; then
