@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────
-# void.sh — Void Linux distro profile for dwm-titus
+# void.sh — Void Linux distro profile for dwm-gossamer
 # Sourced by install.sh / install-arm.sh after OS detection.
 # Provides: package lists, install_packages(), enable_service()
 #
@@ -10,11 +10,15 @@
 #   - Build deps use -devel suffix (not freetype2, not libx11)
 #   - Some packages have different names (Thunar, NetworkManager)
 #   - Uses nerd-fonts-ttf instead of ttf-meslo-nerd (not packaged on Void)
+#   - Uses seatd for minimal seat management (not elogind)
+#   - Uses lemurs as display manager
 # ─────────────────────────────────────────────────────────
 
 DISTRO_NAME="Void Linux"
 
 # ── Package Manager ──────────────────────────────────────
+PKG_CMD="sudo xbps-install -Sy"
+
 setup_pkg_manager() {
     # Sync repos before installing anything
     sudo xbps-install -Sy >/dev/null 2>&1
@@ -34,9 +38,13 @@ install_packages() {
 # ── Service Management (runit) ───────────────────────────
 enable_service() {
     local svc="$1"
-    if [ -d "/etc/sv/$svc" ] && [ ! -L "/var/service/$svc" ]; then
-        sudo ln -s "/etc/sv/$svc" "/var/service/$svc"
+    if [ ! -d "/etc/sv/$svc" ]; then
+        return 1
     fi
+    if [ -L "/var/service/$svc" ]; then
+        return 0
+    fi
+    sudo ln -s "/etc/sv/$svc" "/var/service/$svc"
 }
 
 disable_service() {
@@ -45,6 +53,31 @@ disable_service() {
         sudo rm "/var/service/$svc"
     fi
 }
+
+# Enable essential services for dwm-gossamer
+# Must run BEFORE display manager — lemurs needs dbus + seatd active
+enable_essential_services() {
+    info "Enabling essential runit services..."
+    for svc in dbus seatd NetworkManager; do
+        if enable_service "$svc"; then
+            ok "$svc enabled."
+        else
+            warn "$svc service directory not found — skipping."
+        fi
+    done
+}
+
+# Enable display manager service
+enable_dm_service() {
+    local svc="$1"
+    if enable_service "$svc"; then
+        ok "$svc display manager enabled."
+    else
+        warn "Could not enable $svc — service directory not found."
+    fi
+}
+
+# ── Package Lists ────────────────────────────────────────
 
 BUILD_DEPS=(
     base-devel libX11-devel libXft-devel libXinerama-devel libXrender-devel
@@ -56,8 +89,9 @@ XORG_PKGS=(
     xf86-input-libinput libinput
 )
 
+# seatd replaces elogind for minimal seat management
 RUNTIME_DEPS=(
-    rofi picom dunst feh flameshot dex mate-polkit elogind alsa-utils
+    rofi picom dunst feh flameshot dex mate-polkit seatd alsa-utils
     git unzip xclip xprop Thunar gvfs tumbler arandr
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring

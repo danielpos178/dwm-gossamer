@@ -69,14 +69,8 @@ for pkg in "${RUNTIME_DEPS[@]}"; do
 done
 ok "Runtime dependencies installed."
 
-# ── elogind (seat management) ─────────────────────────────
-info "Enabling elogind for seat management..."
-if command -v elogind &>/dev/null || [ -d /usr/lib/elogind ]; then
-    enable_service "elogind"
-    ok "elogind enabled."
-else
-    warn "elogind not found — seat management may not work."
-fi
+# ── seatd (seat management) ───────────────────────────────
+# seatd is enabled as part of essential services below
 
 # ── PipeWire audio ────────────────────────────────────────
 info "Setting up PipeWire audio..."
@@ -160,14 +154,9 @@ else
 fi
 
 # ── Essential system services (runit/Void Linux) ──────────
-# Must run BEFORE display manager — lemurs needs dbus + elogind active
+# Must run BEFORE display manager — lemurs needs dbus + seatd active
 if ! command -v systemctl &>/dev/null; then
-    info "Enabling essential runit services..."
-    for svc in dbus elogind NetworkManager; do
-        enable_service "$svc" 2>/dev/null \
-            && ok "$svc enabled." \
-            || warn "$svc service not found — may not start automatically."
-    done
+    enable_essential_services
 fi
 
 # ── Display manager (lemurs) ─────────────────────────────
@@ -199,12 +188,10 @@ if command -v lemurs &>/dev/null || [ -d /etc/lemurs ]; then
         ok "Power controls: direct commands (runit)."
     fi
 
-    # Install service (runit or systemd)
+    # Install and enable service (runit or systemd)
     if ! command -v systemctl &>/dev/null; then
         sudo make -C "$REPO_DIR/lemurs" install-runit
-        enable_service "lemurs" 2>/dev/null \
-            && ok "lemurs runit service enabled." \
-            || warn "Enable manually: ln -s /etc/sv/lemurs /var/service/lemurs"
+        enable_dm_service "$DM_SERVICE"
     else
         sudo systemctl enable lemurs.service 2>/dev/null \
             && ok "lemurs systemd service enabled." \

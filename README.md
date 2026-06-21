@@ -78,7 +78,7 @@ sudo pacman -S --needed rofi picom dunst feh flameshot dex mate-polkit alsa-util
 
 **Void Linux:**
 ```bash
-sudo xbps-install -Sy rofi picom dunst feh dex mate-polkit elogind elogind-runit alsa-utils noto-fonts-emoji nerd-fonts-ttf
+sudo xbps-install -Sy rofi picom dunst feh dex mate-polkit seatd alsa-utils noto-fonts-emoji nerd-fonts-ttf
 ```
 
 **Terminal emulator** (at least one):

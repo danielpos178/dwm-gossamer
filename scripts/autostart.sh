@@ -13,7 +13,7 @@ xset -dpms
 if command -v systemctl >/dev/null 2>&1; then
     systemctl --user import-environment DISPLAY XAUTHORITY &
 fi
-# On Void Linux (runit/elogind), --systemd flag is not available; omit it
+# On Void Linux (runit/seatd), --systemd flag is not available; omit it
 if command -v dbus-update-activation-environment >/dev/null 2>&1; then
     if command -v systemctl >/dev/null 2>&1; then
         dbus-update-activation-environment --systemd DISPLAY XAUTHORITY 2>/dev/null &
