@@ -159,60 +159,57 @@ else
     ok "Wallpapers already present."
 fi
 
-# ── Display manager ──────────────────────────────────────
+# ── Essential system services (runit/Void Linux) ──────────
+# Must run BEFORE display manager — lemurs needs dbus + elogind active
+if ! command -v systemctl &>/dev/null; then
+    info "Enabling essential runit services..."
+    for svc in dbus elogind NetworkManager; do
+        enable_service "$svc" 2>/dev/null \
+            && ok "$svc enabled." \
+            || warn "$svc service not found — may not start automatically."
+    done
+fi
+
+# ── Display manager (lemurs) ─────────────────────────────
 currentdm=""
-for dm in lightdm sddm gdm; do command -v "$dm" &>/dev/null && { currentdm="$dm"; break; }; done
+for dm in lemurs lightdm sddm gdm; do command -v "$dm" &>/dev/null && { currentdm="$dm"; break; }; done
 
 if [ -n "$currentdm" ]; then
     ok "Display manager already installed: $currentdm"
 else
-    info "No display manager found — installing LightDM..."
-    for pkg in lightdm; do
-        install_packages "$pkg" 2>/dev/null \
-            || warn "Package '$pkg' not found — skipping."
-    done
-    enable_service "$DM_SERVICE"
-    ok "LightDM installed and enabled."
+    info "Installing lemurs display manager..."
+    install_packages "$DM_PKG" 2>&1 \
+        && ok "lemurs installed." \
+        || warn "lemurs not found — install manually: pacman -S lemurs / xbps-install -S lemurs"
 fi
 
-# ── LightDM greeter ──────────────────────────────────────
-# Try slick-greeter first, fall back to gtk-greeter
-GREETER_SESSION="lightdm-slick-greeter"
-if ! pacman -Qi lightdm-slick-greeter &>/dev/null 2>&1 && \
-   ! xbps-query -l 2>/dev/null | command grep -q "^ii lightdm-slick-greeter "; then
-    info "Installing slick greeter..."
-    install_packages lightdm-slick-greeter 2>/dev/null \
-        && ok "lightdm-slick-greeter installed." \
-        || { warn "lightdm-slick-greeter not found — falling back to gtk-greeter."
-             GREETER_SESSION="lightdm-gtk-greeter"
-             install_packages lightdm-gtk-greeter 2>/dev/null \
-                 && ok "lightdm-gtk-greeter installed." \
-                 || warn "No greeter found — install lightdm-slick-greeter or lightdm-gtk-greeter manually."; }
-else
-    ok "Greeter already installed: $GREETER_SESSION"
-fi
+# ── Lemurs config ────────────────────────────────────────
+if command -v lemurs &>/dev/null || [ -d /etc/lemurs ]; then
+    info "Deploying lemurs config..."
+    sudo make -C "$REPO_DIR/lemurs" install
 
-# ── Essential system services (runit/Void Linux) ──────────
-if ! command -v systemctl &>/dev/null; then
-    info "Enabling essential runit services..."
-    enable_service "dbus" 2>/dev/null \
-        && ok "dbus enabled." \
-        || warn "dbus service not found — D-Bus may not start automatically."
-    enable_service "NetworkManager" 2>/dev/null \
-        && ok "NetworkManager enabled." \
-        || warn "NetworkManager service not found — networking may not work."
-fi
-
-# ── LightDM greeter config ───────────────────────────────
-if command -v lightdm &>/dev/null; then
-    info "Deploying LightDM greeter config..."
-    sudo make -C "$REPO_DIR/lightdm" install
-    # Patch greeter-session to match what was actually installed
-    if [ -n "${GREETER_SESSION:-}" ]; then
-        sudo sed -i "s|^greeter-session=.*|greeter-session=$GREETER_SESSION|" \
-            /etc/lightdm/lightdm.conf
+    # Patch power commands based on init system
+    if [ -d /run/systemd/system ]; then
+        ok "Power controls: systemctl."
+    else
+        # runit (Void Linux) — patch to direct power commands
+        sudo sed -i 's|cmd = "systemctl poweroff -l"|cmd = "poweroff"|'    /etc/lemurs/config.toml
+        sudo sed -i 's|cmd = "systemctl reboot -l"|cmd = "reboot"|'        /etc/lemurs/config.toml
+        sudo sed -i 's|cmd = "systemctl suspend"|cmd = "zzz"|'             /etc/lemurs/config.toml
+        ok "Power controls: direct commands (runit)."
     fi
-    ok "LightDM config deployed."
+
+    # Install service (runit or systemd)
+    if ! command -v systemctl &>/dev/null; then
+        sudo make -C "$REPO_DIR/lemurs" install-runit
+        enable_service "lemurs" 2>/dev/null \
+            && ok "lemurs runit service enabled." \
+            || warn "Enable manually: ln -s /etc/sv/lemurs /var/service/lemurs"
+    else
+        sudo systemctl enable lemurs.service 2>/dev/null \
+            && ok "lemurs systemd service enabled." \
+            || warn "Could not enable lemurs.service."
+    fi
 fi
 
 # ── ARM-specific: picom backend advisory ─────────────────

@@ -41,7 +41,7 @@ BUILD_DEPS=(
 )
 
 XORG_PKGS=(
-    xorg-server xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xauth
+    xorg-server xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset
 )
 
 RUNTIME_DEPS=(
@@ -56,8 +56,8 @@ THEME_DEPS=(dconf qt6ct qt5ct)
 FONT_PKGS=(noto-fonts-emoji ttf-meslo-nerd)
 TERMINAL_PKG=alacritty
 BAR_PKG=polybar
-DM_PKGS=(lightdm lightdm-slick-greeter)
-DM_SERVICE=lightdm
+DM_PKG=lemurs
+DM_SERVICE=lemurs
 
 # ── Distro-Specific Helpers ──────────────────────────────
 

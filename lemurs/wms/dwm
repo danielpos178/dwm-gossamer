@@ -1,0 +1,3 @@
+#!/bin/sh
+# Lemurs WM script — launches dwm via startx
+exec startx

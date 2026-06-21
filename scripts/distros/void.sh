@@ -76,8 +76,8 @@ FONT_PKGS=(
 )
 TERMINAL_PKG=alacritty
 BAR_PKG=polybar
-DM_PKGS=(lightdm lightdm-slick-greeter)
-DM_SERVICE=lightdm
+DM_PKG=lemurs
+DM_SERVICE=lemurs
 
 # ── Distro-Specific Helpers ──────────────────────────────
 
