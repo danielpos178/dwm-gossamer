@@ -46,14 +46,14 @@ load_theme() {
     t() { toml_get "$sec" "$1" "$THEMES_FILE"; }
 
     local v
-    v="$(t term_bg)"       && BG="$v"
-    v="$(t term_fg)"       && FG="$v"
-    v="$(t normbgcolor)"   && BGSEL="$v"
+    v="$(t term_bg)"        && BG="$v"
+    v="$(t term_fg)"        && FG="$v"
+    v="$(t normbgcolor)"    && BGSEL="$v"
     v="$(t selbordercolor)" && ACCENT="$v"
-    v="$(t normfgcolor)"   && GREY="$v"
+    v="$(t normfgcolor)"    && GREY="$v"
 }
 
-load_theme 2>/dev/null || true  # fall back to defaults
+load_theme 2>/dev/null || true
 
 # ── Handle clear subcommand ───────────────────────────────
 case "${1:-}" in
@@ -73,25 +73,103 @@ esac
 if ! pgrep -x clipmenud &>/dev/null; then
     if command -v clipmenud &>/dev/null; then
         clipmenud &
-        sleep 0.2
+        # Wait for cache file (clipmenud creates it on startup)
+        i=0
+        while [ ! -f "$(clipctl cache-dir 2>/dev/null)/line_cache" ] && [ "$i" -lt 30 ]; do
+            sleep 0.1
+            i=$((i + 1))
+        done
     else
         echo "clipmenud not found — install clipmenu." >&2
         exit 1
     fi
 fi
 
-# ── Launch clipmenu through rofi ──────────────────────────
-exec clipmenu -i \
-    -p " Clipboard" \
-    -theme-str "window {background-color: ${BG}; border: 0;}" \
-    -theme-str "mainbox {background-color: ${BG}; spacing: 0;}" \
-    -theme-str "inputbar {background-color: ${BGSEL}; padding: 8px 12px;}" \
-    -theme-str "prompt {text-color: ${ACCENT};}" \
-    -theme-str "entry {text-color: ${FG}; placeholder-color: ${GREY};}" \
-    -theme-str "listview {background-color: ${BG}; lines: 10;}" \
-    -theme-str "element {padding: 8px 12px; text-color: ${FG};}" \
-    -theme-str "element selected {background-color: ${BGSEL}; text-color: ${ACCENT};}" \
-    -theme-str "element-text {background-color: inherit; text-color: inherit;}" \
-    -font "MesloLGS NF 14" \
-    -show-icons \
-    -width 30
+# ── Bail if clipboard is empty ────────────────────────────
+CACHE_DIR="$(clipctl cache-dir 2>/dev/null || true)"
+if [ -z "$CACHE_DIR" ] || [ ! -f "${CACHE_DIR}/line_cache" ]; then
+    echo "Clipboard is empty — copy something first." >&2
+    exit 1
+fi
+
+# ── Write a temporary rofi theme ──────────────────────────
+# clipmenu invokes: rofi -dmenu -l N <user-args>
+# rofi reads its theme from $XDG_CONFIG_HOME/rofi/config.rasi,
+# but we override with a temp theme file via -theme.
+THEME_TMP="$(mktemp /tmp/dwm-clipboard-XXXXXX.rasi)"
+trap 'rm -f "$THEME_TMP"' EXIT
+
+cat > "$THEME_TMP" <<EOF
+* {
+    background:    ${BG};
+    foreground:    ${FG};
+    bg-selected:   ${BGSEL};
+    accent:        ${ACCENT};
+    grey:          ${GREY};
+    spacing: 0;
+    width: 30em;
+}
+
+window {
+    background-color: @background;
+    border: 0;
+    padding: 0;
+    location: northwest;
+    anchor: northwest;
+    x-offset: 0;
+    y-offset: 0;
+}
+
+mainbox {
+    background-color: @background;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    background-color: @bg-selected;
+    padding: 8px 12px;
+}
+
+prompt {
+    background-color: @bg-selected;
+    text-color: @accent;
+    font: "MesloLGS NF Bold 14";
+}
+
+entry {
+    background-color: @bg-selected;
+    text-color: @foreground;
+    placeholder: "Search clipboard...";
+    placeholder-color: @grey;
+    font: "MesloLGS NF 14";
+}
+
+listview {
+    background-color: @background;
+    lines: 12;
+    fixed-height: true;
+}
+
+element {
+    padding: 8px 12px;
+    background-color: @background;
+    text-color: @foreground;
+    font: "MesloLGS NF 13";
+}
+
+element selected {
+    background-color: @bg-selected;
+    text-color: @accent;
+}
+
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+}
+EOF
+
+# ── Launch clipmenu through rofi with themed override ─────
+export CM_LAUNCHER=rofi
+export CM_HISTLENGTH=12
+
+exec clipmenu -theme "$THEME_TMP"
