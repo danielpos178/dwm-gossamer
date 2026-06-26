@@ -431,7 +431,6 @@ applyrules(Client *c)
 			}
 		}
 	} else {
-		/* Mask to only valid tags for this monitor */
 		c->tags &= montags;
 	}
 }
@@ -1370,8 +1369,7 @@ grabkeys(void)
 		}
 		for (k = start; k <= end; k++)
 			for (i = 0; i < nkeys_active; i++)
-				/* skip modifier codes, we do that ourselves */
-				if (akeys[i].keysym == syms[(k - start) * skip])
+			if (akeys[i].keysym == syms[(k - start) * skip])
 					for (j = 0; j < LENGTH(modifiers); j++)
 						XGrabKey(dpy, k,
 							 akeys[i].mod | modifiers[j],
@@ -1687,14 +1685,12 @@ movestack(const Arg *arg) {
 	Client *c = NULL, *p = NULL, *pc = NULL, *i;
 
 	if(arg->i > 0) {
-		/* find the client after selmon->sel */
 		for(c = selmon->sel->next; c && (!ISVISIBLE(c) || c->isfloating); c = c->next);
 		if(!c)
 			for(c = selmon->clients; c && (!ISVISIBLE(c) || c->isfloating); c = c->next);
 
 	}
 	else {
-		/* find the client before selmon->sel */
 		for(i = selmon->clients; i != selmon->sel; i = i->next)
 			if(ISVISIBLE(i) && !i->isfloating)
 				c = i;
@@ -1703,7 +1699,6 @@ movestack(const Arg *arg) {
 				if(ISVISIBLE(i) && !i->isfloating)
 					c = i;
 	}
-	/* find the client before selmon->sel and c */
 	for(i = selmon->clients; i && (!p || !pc); i = i->next) {
 		if(i->next == selmon->sel)
 			p = i;
@@ -1711,7 +1706,6 @@ movestack(const Arg *arg) {
 			pc = i;
 	}
 
-	/* swap c and selmon->sel selmon->clients in the selmon->clients list */
 	if(c && c != selmon->sel) {
 		Client *temp = selmon->sel->next==c?selmon->sel:selmon->sel->next;
 		selmon->sel->next = c->next==selmon->sel?c:c->next;
@@ -1833,9 +1827,9 @@ placemouse(const Arg *arg)
 
 			if ((((float)(r->y + r->h - py) / r->h) > ((float)(r->x + r->w - px) / r->w)
 			    	&& (abs(r->y - py) < r->h / 2)) || (abs(r->x - px) < r->w / 2))
-				attachmode = 1; // above
+				attachmode = 1;
 			else
-				attachmode = 0; // below
+				attachmode = 0;
 
 			if ((r && r != prevr) || (attachmode != prevattachmode)) {
 				detachstack(c);
@@ -2018,7 +2012,7 @@ resizemouse(const Arg *arg)
 
 	if (!(c = selmon->sel))
 		return;
-	if (c->isfullscreen && c->fakefullscreen != 1) /* no support resizing fullscreen windows by mouse */
+	if (c->isfullscreen && c->fakefullscreen != 1)
 		return;
 	restack(selmon);
 	nx = ocx = c->x;
@@ -2108,7 +2102,6 @@ run(void)
 
 	XSync(dpy, False);
 	while (running) {
-		/* Drain all pending X events */
 		while (XPending(dpy)) {
 			XNextEvent(dpy, &ev);
 			if (handler[ev.type])
@@ -2116,7 +2109,6 @@ run(void)
 		}
 		if (!running) break;
 
-		/* Handle SIGUSR1-triggered reload */
 		if (sig_reload_pending) {
 			sig_reload_pending = 0;
 			reload_config();
@@ -2135,7 +2127,6 @@ run(void)
 			break;
 		}
 
-		/* Handle inotify file-change events */
 		if (inotify_fd >= 0 && FD_ISSET(inotify_fd, &rfds)) {
 			char ibuf[4096];
 			ssize_t nr = read(inotify_fd, ibuf, sizeof(ibuf));
@@ -2167,15 +2158,10 @@ runautostart(void)
 	struct stat sb;
 
 	if ((home = getenv("HOME")) == NULL)
-		/* this is almost impossible */
 		return;
 
-	/* if $XDG_DATA_HOME is set and not empty, use $XDG_DATA_HOME/dwm,
-	 * otherwise use ~/.local/share/dwm as autostart script directory
-	 */
 	xdgdatahome = getenv("XDG_DATA_HOME");
 	if (xdgdatahome != NULL && *xdgdatahome != '\0') {
-		/* space for path segments, separators and nul */
 		pathpfx = ecalloc(1, strlen(xdgdatahome) + strlen(dwmdir) + 2);
 
 		if (sprintf(pathpfx, "%s/%s", xdgdatahome, dwmdir) <= 0) {
@@ -2183,7 +2169,6 @@ runautostart(void)
 			return;
 		}
 	} else {
-		/* space for path segments, separators and nul */
 		pathpfx = ecalloc(1, strlen(home) + strlen(localshare)
 							 + strlen(dwmdir) + 3);
 
@@ -2193,7 +2178,6 @@ runautostart(void)
 		}
 	}
 
-	/* check if the autostart script directory exists */
 	if (! (stat(pathpfx, &sb) == 0 && S_ISDIR(sb.st_mode))) {
 		/* the XDG conformant path does not exist or is no directory
 		 * so we try ~/.dwm instead
@@ -2211,7 +2195,6 @@ runautostart(void)
 		}
 	}
 
-	/* try the autostart script */
 	path = ecalloc(1, strlen(pathpfx) + strlen(autostartsh) + 2);
 	if (sprintf(path, "%s/%s", pathpfx, autostartsh) <= 0) {
 		free(path);
@@ -2225,8 +2208,7 @@ runautostart(void)
 			execl(path, path, (char *)NULL);
 			_exit(127);
 		}
-		/* parent returns immediately — dwm is not blocked by autostart */
-	}
+		}
 
 	free(pathpfx);
 	free(path);
@@ -2297,21 +2279,17 @@ sendmon(Client *c, Monitor *m)
 	updatemonitorcount();
 	montags = getmontagmask(m->num);
 	
-	/* Assign appropriate tags for the target monitor */
 	if (!(c->tags & montags)) {
-		/* If client's current tags don't work on target monitor, assign first valid tag */
 		for (i = 0; i < LENGTH(tags); i++) {
 			if (montags & (1 << i)) {
 				c->tags = 1 << i;
 				break;
 			}
 		}
-		/* Fallback if no valid tags found */
 		if (!(c->tags & montags)) {
 			c->tags = m->tagset[m->seltags] ? m->tagset[m->seltags] : 1;
 		}
 	} else {
-		/* Mask to only valid tags for target monitor */
 		c->tags &= montags;
 	}
 	
@@ -2413,26 +2391,21 @@ setfullscreen(Client *c, int fullscreen)
 	XEvent ev;
 	int savestate = 0, restorestate = 0;
 
-	if ((c->fakefullscreen == 0 && fullscreen && !c->isfullscreen) // normal fullscreen
-			|| (c->fakefullscreen == 2 && fullscreen)) // fake fullscreen --> actual fullscreen
-		savestate = 1; // go actual fullscreen
-	else if ((c->fakefullscreen == 0 && !fullscreen && c->isfullscreen) // normal fullscreen exit
-			|| (c->fakefullscreen >= 2 && !fullscreen)) // fullscreen exit --> fake fullscreen
-		restorestate = 1; // go back into tiled
+	if ((c->fakefullscreen == 0 && fullscreen && !c->isfullscreen)
+			|| (c->fakefullscreen == 2 && fullscreen))
+		savestate = 1;
+	else if ((c->fakefullscreen == 0 && !fullscreen && c->isfullscreen)
+			|| (c->fakefullscreen >= 2 && !fullscreen))
+		restorestate = 1;
 
-	/* If leaving fullscreen and the window was previously fake fullscreen (2), then restore
-	 * that while staying in fullscreen. The exception to this is if we are in said state, but
-	 * the client itself disables fullscreen (3) then we let the client go out of fullscreen
-	 * while keeping fake fullscreen enabled (as otherwise there will be a mismatch between the
-	 * client and the window manager's perception of the client's fullscreen state). */
 	if (c->fakefullscreen == 2 && !fullscreen && c->isfullscreen) {
 		c->fakefullscreen = 1;
 		c->isfullscreen = 1;
 		fullscreen = 1;
-	} else if (c->fakefullscreen == 3) // client exiting actual fullscreen
+	} else if (c->fakefullscreen == 3)
 		c->fakefullscreen = 1;
 
-	if (fullscreen != c->isfullscreen) { // only send property change if necessary
+	if (fullscreen != c->isfullscreen) {
 		if (fullscreen)
 			XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 				PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
@@ -2535,7 +2508,6 @@ setcfact(const Arg *arg)
 	arrange(selmon);
 }
 
-/* arg > 1.0 will set mfact absolutely */
 void
 setmfact(const Arg *arg)
 {
@@ -2549,8 +2521,6 @@ setmfact(const Arg *arg)
 	selmon->mfact = selmon->pertag->mfacts[selmon->pertag->curtag] = f;
 	arrange(selmon);
 }
-
-/* ── Hot-reload implementation ────────────────────────────────────────────── */
 
 static void
 sigusr1_handler(int sig)
@@ -2588,7 +2558,6 @@ static unsigned int
 parse_mod_mask(const TomlValue *v)
 {
 	if (!v) return 0;
-	/* Compact format: "SUPER SHIFT CTRL" space-separated string */
 	if (v->type == TOML_STRING) {
 		unsigned int mask = 0;
 		const char *p = v->s;
@@ -2604,7 +2573,6 @@ parse_mod_mask(const TomlValue *v)
 		}
 		return mask;
 	}
-	/* Legacy array format: ["MODKEY", "ShiftMask"] */
 	if (v->type == TOML_ARRAY) {
 		unsigned int mask = 0;
 		int i;
@@ -2643,7 +2611,6 @@ static void (*lookup_func(const char *name))(const Arg *)
 	return NULL;
 }
 
-/* Fire a notify-send (async, non-blocking) to warn about bad/missing config */
 static void
 notify_bad_config(const char *filename, const char *reason)
 {
@@ -2660,7 +2627,6 @@ notify_bad_config(const char *filename, const char *reason)
 	}
 }
 
-/* Map a TOML click-name string to the dwm Click enum value */
 static unsigned int
 lookup_click(const char *name)
 {
@@ -2673,7 +2639,6 @@ lookup_click(const char *name)
 	return ClkLast; /* unknown */
 }
 
-/* Expand $varname from [vars] section into dst. */
 static void
 expand_var_to(const char *src, const TomlDoc *doc, char *dst, size_t dstsz)
 {
@@ -2924,10 +2889,9 @@ load_themes_toml(const char *user_path, const char *default_path)
 		}
 	}
 
-	/* Build color table with Nord fallback values */
 	static char c_normborder[8], c_normbg[8], c_normfg[8];
 	static char c_selborder[8],  c_selbg[8],  c_selfg[8];
-	strncpy(c_normborder, "#3B4252", 7); c_normborder[7] = '\0';  /* Nord fallback */
+	strncpy(c_normborder, "#3B4252", 7); c_normborder[7] = '\0';
 	strncpy(c_normbg,     "#434C5E", 7); c_normbg[7]     = '\0';
 	strncpy(c_normfg,     "#D8DEE9", 7); c_normfg[7]     = '\0';
 	strncpy(c_selborder,  "#81A1C1", 7); c_selborder[7]  = '\0';
@@ -3072,7 +3036,6 @@ reload_config(void)
 	{
 		pid_t pid = fork();
 		if (pid == 0) {
-			/* child: find and run the theme-apply script */
 			const char *home = getenv("HOME");
 			char script[PATH_MAX];
 			if (home) {
@@ -3082,8 +3045,7 @@ reload_config(void)
 			}
 			_exit(0);
 		}
-		/* parent continues; child is reaped by existing SIGCHLD handler */
-	}
+		}
 }
 
 static void
@@ -3118,7 +3080,6 @@ setup_inotify(void)
 	inotify_wd = inotify_add_watch(inotify_fd, toml_config_dir,
 	                               IN_CLOSE_WRITE | IN_MOVED_TO);
 	if (inotify_wd < 0) {
-		/* User config dir not present – watch only the default dir */
 		inotify_wd = -1;
 	}
 
@@ -3127,7 +3088,6 @@ setup_inotify(void)
 	                                IN_CLOSE_WRITE | IN_MOVED_TO);
 
 	if (inotify_wd < 0 && inotify_wd3 < 0) {
-		/* Neither dir is watchable – disable inotify */
 		close(inotify_fd);
 		inotify_fd = -1;
 		return;
@@ -3141,14 +3101,11 @@ setup(void)
 	int i;
 	XSetWindowAttributes wa;
 	Atom utf8string;
-	/* clean up any zombies immediately */
-	sigchld(0);
-	dyn_borderpx = 1; /* initial value; overridden by themes.toml on load */
+	dyn_borderpx = 1;
 
 	/* the one line of bloat that would have saved a lot of time for a lot of people */
 	putenv("_JAVA_AWT_WM_NONREPARENTING=1");
 
-	/* init screen */
 	screen = DefaultScreen(dpy);
 	sw = DisplayWidth(dpy, screen);
 	sh = DisplayHeight(dpy, screen);
@@ -3157,11 +3114,9 @@ setup(void)
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
 	lrpad = drw->fonts->h;
-	bh = 0; /* Polybar provides its own bar */
+	bh = 0;
 	updategeom();
-	/* Initialize monitor-specific tags after geometry is set up */
 	initmonitortags();
-	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);
 	wmatom[WMProtocols] = XInternAtom(dpy, "WM_PROTOCOLS", False);
 	wmatom[WMDelete] = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
@@ -3184,7 +3139,6 @@ setup(void)
 	netatom[NetCurrentDesktop] = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
 	netatom[NetDesktopNames] = XInternAtom(dpy, "_NET_DESKTOP_NAMES", False);
 	netatom[NetWMDesktop] = XInternAtom(dpy, "_NET_WM_DESKTOP", False);
-	/* init cursors */
 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
 	cursor[CurResizeBR] = drw_cur_create(drw, XC_bottom_right_corner);
@@ -3192,7 +3146,6 @@ setup(void)
 	cursor[CurResizeTR] = drw_cur_create(drw, XC_top_right_corner);
 	cursor[CurResizeTL] = drw_cur_create(drw, XC_top_left_corner);
 	cursor[CurMove] = drw_cur_create(drw, XC_fleur);
-	/* init appearance (placeholder colors; theme loaded from TOML in reload_config below) */
 	{
 		static const char *init_clrs[2][3] = {
 			{ "#D8DEE9", "#434C5E", "#3B4252" },  /* SchemeNorm: fg, bg, border */
@@ -3202,10 +3155,8 @@ setup(void)
 		for (i = 0; i < 2; i++)
 			scheme[i] = drw_scm_create(drw, init_clrs[i], 3);
 	}
-	/* init bars */
 	updatebars();
 	updatestatus();
-	/* supporting window for NetWMCheck */
 	wmcheckwin = XCreateSimpleWindow(dpy, root, 0, 0, 1, 1, 0, 0, 0);
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
@@ -3213,7 +3164,6 @@ setup(void)
 		PropModeReplace, (unsigned char *) "dwm", 3);
 	XChangeProperty(dpy, root, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
-	/* EWMH support per view */
 	XChangeProperty(dpy, root, netatom[NetSupported], XA_ATOM, 32,
 		PropModeReplace, (unsigned char *) netatom, NetLast);
 	setnumdesktops();
@@ -3221,14 +3171,12 @@ setup(void)
 	setdesktopnames();
 	setviewport();
 	XDeleteProperty(dpy, root, netatom[NetClientList]);
-	/* select events */
 	wa.cursor = cursor[CurNormal]->cursor;
 	wa.event_mask = SubstructureRedirectMask|SubstructureNotifyMask
 		|ButtonPressMask|PointerMotionMask|EnterWindowMask
 		|LeaveWindowMask|StructureNotifyMask|PropertyChangeMask;
 	XChangeWindowAttributes(dpy, root, CWEventMask|CWCursor, &wa);
 	XSelectInput(dpy, root, wa.event_mask);
-	/* Install SIGUSR1 handler and load TOML configs before grabbing keys */
 	signal(SIGUSR1, sigusr1_handler);
 	setup_inotify();
 	reload_config();
@@ -3262,13 +3210,11 @@ showhide(Client *c)
 	if (!c)
 		return;
 	if (ISVISIBLE(c)) {
-		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
 		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
 			resize(c, c->x, c->y, c->w, c->h, 0);
 		showhide(c->snext);
 	} else {
-		/* hide clients bottom up */
 		showhide(c->snext);
 		XMoveWindow(dpy, c->win, WIDTH(c) * -2, c->y);
 	}
@@ -3479,10 +3425,10 @@ getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *s
 		else
 			stotal += ssize * (c->cfact / sfacts);
 
-	*mf = mfacts; // total factor of master area
-	*sf = sfacts; // total factor of stack area
-	*mr = msize - mtotal; // the remainder (rest) of pixels after a cfacts master split
-	*sr = ssize - stotal; // the remainder (rest) of pixels after a cfacts stack split
+	*mf = mfacts;
+	*sf = sfacts;
+	*mr = msize - mtotal;
+	*sr = ssize - stotal;
 }
 
 static void
@@ -3526,11 +3472,6 @@ tile(Monitor *m)
 void
 togglebar(const Arg *arg)
 {
-	/**
-	 * Polybar tray does not raise maprequest event. It must be manually scanned
-	 * for. Scanning it too early while the tray is being populated would give
-	 * wrong dimensions.
-	 */
 	if (!selmon->traywin)
 		scantray();
 
@@ -3565,7 +3506,7 @@ togglefloating(const Arg *arg)
 {
 	if (!selmon->sel)
 		return;
-	if (selmon->sel->isfullscreen && selmon->sel->fakefullscreen != 1) /* no support for fullscreen windows */
+	if (selmon->sel->isfullscreen && selmon->sel->fakefullscreen != 1)
 		return;
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating)
@@ -3586,12 +3527,11 @@ toggletag(const Arg *arg)
     updatemonitorcount();
     montags = getmontagmask(selmon->num);
     
-    /* Only allow toggling tags that belong to this monitor */
     newtags = selmon->sel->tags ^ (arg->ui & TAGMASK & montags);
     if (newtags && (newtags & montags)) {
         selmon->sel->tags = newtags & montags;
-        setclientdesktop(selmon->sel);  // Add this line
-        arrange(selmon);
+    setclientdesktop(selmon->sel);
+    arrange(selmon);
         focus(NULL);
     }
     updatecurrentdesktop();
@@ -3607,7 +3547,6 @@ toggleview(const Arg *arg)
 	updatemonitorcount();
 	montags = getmontagmask(selmon->num);
 	
-	/* Only allow toggling tags that belong to this monitor */
 	newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK & montags);
 
 	if (newtagset) {
@@ -3617,13 +3556,11 @@ toggleview(const Arg *arg)
 		{
 			selmon->pertag->curtag = 0;
 		}
-		/* test if the user did not select the same tag */
 		if (!(newtagset & 1 << (selmon->pertag->curtag - 1))) {
 			for (i = 0; !(newtagset & 1 << i); i++) ;
 			selmon->pertag->curtag = i + 1;
 		}
 
-		/* apply settings for this view */
 		selmon->nmaster = selmon->pertag->nmasters[selmon->pertag->curtag];
 		selmon->mfact = selmon->pertag->mfacts[selmon->pertag->curtag];
 		selmon->sellt = selmon->pertag->sellts[selmon->pertag->curtag];
@@ -3679,10 +3616,10 @@ unmanage(Client *c, int destroyed)
 	#endif
 	if (!destroyed) {
 		wc.border_width = c->oldbw;
-		XGrabServer(dpy); /* avoid race conditions */
-		XSetErrorHandler(xerrordummy);
-		XSelectInput(dpy, c->win, NoEventMask);
-		XConfigureWindow(dpy, c->win, CWBorderWidth, &wc); /* restore border */
+			XGrabServer(dpy);
+			XSetErrorHandler(xerrordummy);
+			XSelectInput(dpy, c->win, NoEventMask);
+			XConfigureWindow(dpy, c->win, CWBorderWidth, &wc);
 		XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
 		setclientstate(c, WithdrawnState);
 		XSync(dpy, False);
@@ -3692,17 +3629,13 @@ unmanage(Client *c, int destroyed)
 
 	free(c);
 	if (!s) {
-		/* Find the topmost visible window */
 		for (top = m->clients; top && (!ISVISIBLE(top) || top->isfloating); top = top->next);
 
 		if (top) {
-			/* Focus the top window and set it as the current focus */
 			focus(top);
 			restack(m);
-			/* Set the input focus to the top window */
 			XSetInputFocus(dpy, top->win, RevertToPointerRoot, CurrentTime);
 		} else {
-			/* If no top window is found, revert focus to the root window */
 			XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		}
 
@@ -3776,7 +3709,6 @@ unswallow(Client *c)
 
 	XDeleteProperty(dpy, c->win, netatom[NetClientList]);
 
-	/* unfullscreen the client */
 	setfullscreen(c, 0);
 	updatetitle(c);
 	arrange(c->mon);
@@ -3792,7 +3724,6 @@ unswallow(Client *c)
 void
 updatebars(void)
 {
-	/* Polybar creates its own bar windows; skip dwm bar creation */
 	return;
 
 	Monitor *m;
@@ -3880,14 +3811,12 @@ updategeom(void)
 		XineramaScreenInfo *unique = NULL;
 
 		for (n = 0, m = mons; m; m = m->next, n++);
-		/* only consider unique geometries as separate screens */
 		unique = ecalloc(nn, sizeof(XineramaScreenInfo));
 		for (i = 0, j = 0; i < nn; i++)
 			if (isuniquegeom(unique, j, &info[i]))
 				memcpy(&unique[j++], &info[i], sizeof(XineramaScreenInfo));
 		XFree(info);
 		nn = j;
-		/* new monitors if nn > n */
 		for (i = n; i < nn; i++) {
 			for (m = mons; m && m->next; m = m->next);
 			if (m)
@@ -3908,7 +3837,6 @@ updategeom(void)
 				m->mh = m->wh = unique[i].height;
 				updatebarpos(m);
 			}
-		/* removed monitors if n > nn */
 		for (i = nn; i < n; i++) {
 			for (m = mons; m && m->next; m = m->next);
 			while ((c = m->clients)) {
@@ -3966,7 +3894,6 @@ updatesizehints(Client *c)
 	XSizeHints size;
 
 	if (!XGetWMNormalHints(dpy, c->win, &size, &msize))
-		/* size is uninitialized, ensure that size.flags aren't used */
 		size.flags = PSize;
 	if (size.flags & PBaseSize) {
 		c->basew = size.base_width;
@@ -4033,7 +3960,7 @@ updatetitle(Client *c)
 {
 	if (!gettextprop(c->win, netatom[NetWMName], c->name, sizeof c->name))
 		gettextprop(c->win, XA_WM_NAME, c->name, sizeof c->name);
-	if (c->name[0] == '\0') /* hack to mark broken clients */
+	if (c->name[0] == '\0')
 		strcpy(c->name, broken);
 }
 
@@ -4078,11 +4005,9 @@ view(const Arg *arg)
 	
 	updatemonitorcount();
 	
-	/* If arg->ui contains tags, check if they belong to current monitor */
 	if (arg->ui & TAGMASK) {
 		montags = getmontagmask(selmon->num);
 		
-		/* If requested tags don't belong to current monitor, find the right monitor */
 		if (!(arg->ui & montags)) {
 			Monitor *m;
 			for (m = mons; m; m = m->next) {
@@ -4093,7 +4018,6 @@ view(const Arg *arg)
 				}
 			}
 			
-			/* If we found a target monitor, switch to it and continue */
 			if (targetmon && targetmon != selmon) {
 				if (selmon->sel)
 					unfocus(selmon->sel, 0);
@@ -4101,7 +4025,6 @@ view(const Arg *arg)
 				focus(NULL);
 				montags = getmontagmask(selmon->num);
 			} else {
-				/* No valid monitor found for this tag, return */
 				return;
 			}
 		}
@@ -4113,7 +4036,6 @@ view(const Arg *arg)
 	 * we may still need to update EWMH/focus/warp if we crossed monitors */
 	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags]) {
 		if (targetmon) {
-			/* We switched monitors — update focus, warp, and EWMH */
 			arrange(selmon);
 			focus(NULL);
 			{
@@ -4136,7 +4058,7 @@ view(const Arg *arg)
 		return;
 	}
 
-	selmon->seltags ^= 1; /* toggle sel tagset */
+	selmon->seltags ^= 1;
 	if (arg->ui & TAGMASK) {
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK & montags;
 		selmon->pertag->prevtag = selmon->pertag->curtag;
@@ -4335,7 +4257,7 @@ zoom(const Arg *arg)
 	pop(c);
 }
 
-/* Monitor-specific tag management functions */
+	/* Monitor-specific tag management functions */
 void
 updatemonitorcount(void)
 {
@@ -4443,7 +4365,6 @@ getmonitorforselectedtag(void)
 	tagspermon = LENGTH(tags) / monitorcount;
 	if (tagspermon == 0) tagspermon = 1;
 	
-	/* Find which tag bit is set */
 	for (i = 0; i < LENGTH(tags); i++) {
 		if (curtag & (1 << i)) {
 			return i / tagspermon >= monitorcount ? monitorcount - 1 : i / tagspermon;
@@ -4453,7 +4374,6 @@ getmonitorforselectedtag(void)
 	return 0;
 }
 
-/* Initialize monitor-specific tags after all monitors are created */
 void
 initmonitortags(void)
 {
@@ -4466,7 +4386,6 @@ initmonitortags(void)
 	for (m = mons; m; m = m->next) {
 		montags = getmontagmask(m->num);
 		
-		/* Set default tagset to first valid tag for this monitor */
 		for (i = 0; i < LENGTH(tags); i++) {
 			if (montags & (1 << i)) {
 				m->tagset[0] = m->tagset[1] = 1 << i;
@@ -4474,7 +4393,6 @@ initmonitortags(void)
 			}
 		}
 		
-		/* Fallback to first tag if calculation fails */
 		if (!m->tagset[0])
 			m->tagset[0] = m->tagset[1] = 1;
 	}

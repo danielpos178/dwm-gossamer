@@ -30,10 +30,6 @@ toml_table_count(const TomlDoc *doc, const char *section)
 	return max + 1;
 }
 
-/* ── Inline string un-escaping ───────────────────────────────────────────── */
-/* Copies unescaped content from src (pointing just after opening '"') into
- * dst, stopping before the closing '"'.  Returns pointer to the closing '"'
- * (or end-of-string if unterminated). */
 static const char *
 unescape_into(const char *src, char *dst, int maxlen)
 {
@@ -54,24 +50,17 @@ unescape_into(const char *src, char *dst, int maxlen)
 		src++;
 	}
 	dst[si] = '\0';
-	return src; /* points to closing '"' or '\0' */
+	return src;
 }
 
-/* ── Inline table parser ─────────────────────────────────────────────────── */
-/* Parses key=value pairs from content between { and }.
- * p points to first character *after* the opening '{'.
- * Returns pointer to first character *after* the closing '}'.
- * Each pair is stored as a TomlEntry with the given section and tidx. */
 static const char *
 parse_inline_table(const char *p, TomlDoc *doc, const char *section, int tidx)
 {
 	while (*p) {
-		/* skip whitespace and commas between pairs */
 		while (isspace((unsigned char)*p) || *p == ',') p++;
 		if (*p == '}' || *p == '\0') break;
 		if (doc->n >= TOML_MAX_ENTRIES) break;
 
-		/* key (unquoted identifier) */
 		const char *kstart = p;
 		while (*p && *p != '=' && !isspace((unsigned char)*p) && *p != '}') p++;
 		int klen = (int)(p - kstart);
@@ -112,7 +101,6 @@ parse_inline_table(const char *p, TomlDoc *doc, const char *section, int tidx)
 			if (*p == ']') p++;
 
 		} else {
-			/* integer or float */
 			char nbuf[64];
 			int ni = 0;
 			while (*p && *p != ',' && *p != '}' && !isspace((unsigned char)*p) && ni < 63)
@@ -131,7 +119,6 @@ parse_inline_table(const char *p, TomlDoc *doc, const char *section, int tidx)
 		}
 		doc->n++;
 
-		/* advance past any trailing chars before next comma/brace */
 		while (*p && *p != ',' && *p != '}') p++;
 	}
 	if (*p == '}') p++;
@@ -158,9 +145,8 @@ toml_parse(const char *path, TomlDoc *doc)
 
 		/* ── multi-line array mode ── */
 		if (ml_active) {
-			if (!*p || *p == '#') continue;           /* blank / comment */
-			if (p[0] == ']') { ml_active = 0; continue; }  /* end of array */
-			/* parse every { ... } block on this line */
+			if (!*p || *p == '#') continue;
+			if (p[0] == ']') { ml_active = 0; continue; }
 			const char *sp = p;
 			while (*sp) {
 				while (*sp && *sp != '{') sp++;
@@ -174,7 +160,6 @@ toml_parse(const char *path, TomlDoc *doc)
 
 		if (!*p || *p == '#') continue;
 
-		/* [[array-of-tables]] */
 		if (p[0] == '[' && p[1] == '[') {
 			char *end = strstr(p + 2, "]]");
 			if (!end) continue;
@@ -186,7 +171,6 @@ toml_parse(const char *path, TomlDoc *doc)
 			continue;
 		}
 
-		/* [section] */
 		if (p[0] == '[') {
 			char *end = strchr(p + 1, ']');
 			if (!end) continue;
@@ -198,7 +182,6 @@ toml_parse(const char *path, TomlDoc *doc)
 			continue;
 		}
 
-		/* key = value */
 		char *eq = strchr(p, '=');
 		if (!eq) continue;
 
@@ -211,7 +194,6 @@ toml_parse(const char *path, TomlDoc *doc)
 		key[klen] = '\0';
 
 		char *v = strtrim(eq + 1);
-		/* strip inline comment (outside strings) */
 		{
 			int in_str = 0;
 			for (char *cp = v; *cp; cp++) {
@@ -221,13 +203,11 @@ toml_parse(const char *path, TomlDoc *doc)
 			v = strtrim(v);
 		}
 
-		/* ── compact array-of-tables: key = [ or key = [{...},...] ── */
 		if (*v == '[') {
 			const char *after = v + 1;
 			while (isspace((unsigned char)*after)) after++;
 
 			if (*after == '\0') {
-				/* multi-line array: opening '[' on its own */
 				strncpy(ml_section, key, TOML_MAX_STR - 1);
 				ml_section[TOML_MAX_STR - 1] = '\0';
 				ml_tidx   = 0;
@@ -236,7 +216,6 @@ toml_parse(const char *path, TomlDoc *doc)
 			}
 
 			if (*after == '{') {
-				/* single-line array of inline tables: key = [{...}, ...] */
 				const char *sp = v + 1;
 				int tidx_local = 0;
 				while (*sp && *sp != ']') {
@@ -250,7 +229,6 @@ toml_parse(const char *path, TomlDoc *doc)
 			}
 		}
 
-		/* ── standard scalar / array value ── */
 		if (doc->n >= TOML_MAX_ENTRIES) continue;
 		TomlEntry *ent = &doc->entries[doc->n];
 		strncpy(ent->section, cur_section, TOML_MAX_STR - 1);

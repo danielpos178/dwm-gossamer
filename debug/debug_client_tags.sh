@@ -9,19 +9,15 @@ for win_id in $window_ids; do
     echo "=========================================="
     echo "Window ID: $win_id"
     
-    # Get window name
     name=$(xprop -id "$win_id" WM_NAME 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs)
     echo "Name: $name"
     
-    # Get desktop assignment
     desktop=$(xprop -id "$win_id" _NET_WM_DESKTOP 2>/dev/null | awk '{print $NF}')
     echo "Desktop (_NET_WM_DESKTOP): $desktop"
     
-    # Get window state (mapped/unmapped)
     state=$(xprop -id "$win_id" WM_STATE 2>/dev/null | awk '{print $3}')
     echo "WM_STATE: $state"
     
-    # Get window geometry
     geom=$(xwininfo -id "$win_id" 2>/dev/null | grep "Absolute upper-left")
     if [ -n "$geom" ]; then
         x_pos=$(echo "$geom" | grep "X:" | awk '{print $4}')

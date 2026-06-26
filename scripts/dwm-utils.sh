@@ -1,13 +1,6 @@
 #!/bin/bash
-# ─────────────────────────────────────────────────────────
 # dwm-utils.sh — Shared utility library for dwm-titus
-# Source this file from other scripts:
-#   source "$(dirname "$0")/dwm-utils.sh"
-# ─────────────────────────────────────────────────────────
 
-# ── OS Detection ─────────────────────────────────────────
-
-# Detect the current Linux distribution ID from /etc/os-release
 detect_distro() {
     if [ -f /etc/os-release ]; then
         # shellcheck disable=SC1091
@@ -18,8 +11,6 @@ detect_distro() {
     fi
 }
 
-# Load the distro-specific profile (package lists, functions)
-# Requires $REPO_DIR to be set by the caller before sourcing this file
 load_distro() {
     local os_id
     os_id="$(detect_distro)"
@@ -34,8 +25,6 @@ load_distro() {
     # shellcheck disable=SC1090
     source "$distro_file"
 }
-
-# ── Hardware Detection ──────────────────────────────────
 
 # Detect GPU type: nvidia, amd, intel, or unknown
 detect_gpu() {

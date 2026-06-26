@@ -1,10 +1,5 @@
 #!/bin/bash
-# ─────────────────────────────────────────────────────────
-# dwm-titus dependency checker
-# Supports: Arch Linux (pacman), Void Linux (xbps)
-# Run before building to verify all required packages
-# are installed. Exit code 0 = all good, 1 = missing deps.
-# ─────────────────────────────────────────────────────────
+# dwm-titus dependency checker — supports Arch (pacman) and Void (xbps)
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,7 +8,6 @@ NC='\033[0m'
 
 MISSING=0
 
-# ── Detect package manager ──────────────────────────────
 detect_pkg_manager() {
     if command -v pacman &>/dev/null; then
         echo "pacman"
@@ -91,7 +85,6 @@ echo ""
 echo "═══ dwm-titus Dependency Check ($PKG_MGR) ═══"
 echo ""
 
-# ── Build dependencies ──────────────────────────────────
 echo "Build Dependencies (required to compile):"
 case "$PKG_MGR" in
     pacman)
@@ -109,7 +102,6 @@ check_cmd "cc"
 check_cmd "make"
 echo ""
 
-# ── Xorg / Xlibre ───────────────────────────────────────
 echo "X Server Components:"
 case "$PKG_MGR" in
     pacman)
@@ -134,7 +126,6 @@ case "$PKG_MGR" in
         ;;
 esac
 
-# ── Runtime dependencies ────────────────────────────────
 echo "Runtime Dependencies (desktop experience):"
 check_cmd "rofi"
 check_cmd "picom"
@@ -145,7 +136,6 @@ check_cmd "dex"
 check_cmd "amixer"
 echo ""
 
-# ── Audio stack ─────────────────────────────────────────
 echo "Audio Stack:"
 check_cmd "pipewire"
 check_cmd "wpctl"
@@ -153,7 +143,6 @@ check_cmd "wireplumber"
 check_cmd "pavucontrol"
 echo ""
 
-# ── Terminal emulators ──────────────────────────────────
 echo "Terminal Emulators (at least one required):"
 TERM_FOUND=0
 for term in alacritty kitty st; do
@@ -168,19 +157,16 @@ if [ $TERM_FOUND -eq 0 ]; then
 fi
 echo ""
 
-# ── Optional but recommended ────────────────────────────
 echo "Optional (recommended):"
 check_cmd "polybar"
 check_cmd "xdg-open"
 echo ""
 
-# ── Fonts ───────────────────────────────────────────────
 echo "Fonts:"
 check_font_any "MesloLGS Nerd Font (NF compatible)" "MesloLGS Nerd Font" "MesloLGS Nerd Font Mono" "MesloLGS NF"
 check_font "Noto Color Emoji"
 echo ""
 
-# ── Session entry ───────────────────────────────────────
 echo "Session Setup:"
 if [ -f "$HOME/.xinitrc" ]; then
     printf "  ${GREEN}✓${NC} ~/.xinitrc exists\n"
@@ -189,7 +175,6 @@ else
 fi
 echo ""
 
-# ── Summary ─────────────────────────────────────────────
 if [ $MISSING -eq 0 ]; then
     printf "${GREEN}All dependencies satisfied. Ready to build!${NC}\n"
     echo "  Run: make && sudo make install"

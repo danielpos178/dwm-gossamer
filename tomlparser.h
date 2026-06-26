@@ -1,8 +1,4 @@
-/* Minimal TOML parser for dwm-titus hot-reload configuration.
- * Supports: string, integer, float, string arrays,
- *           [section], [[array-of-tables]]
- * Comments (#), basic string escapes (\n \t \\ \")
- */
+/* Minimal TOML parser for dwm-titus hot-reload configuration. */
 #pragma once
 #include <stddef.h>
 
@@ -19,18 +15,18 @@ typedef enum {
 
 typedef struct {
 	TomlType type;
-	char     s[TOML_MAX_STR];               /* TOML_STRING */
-	long     i;                              /* TOML_INT    */
-	double   d;                              /* TOML_FLOAT  */
+	char     s[TOML_MAX_STR];
+	long     i;
+	double   d;
 	struct {
 		char  items[TOML_MAX_ARR][TOML_MAX_STR];
 		int   len;
-	} a;                                     /* TOML_ARRAY  */
+	} a;
 } TomlValue;
 
 typedef struct {
 	char      section[TOML_MAX_STR];
-	int       table_idx;   /* -1 for [section], >=0 for [[array-of-tables]] */
+	int       table_idx;
 	char      key[TOML_MAX_STR];
 	TomlValue val;
 } TomlEntry;
@@ -40,16 +36,9 @@ typedef struct {
 	int       n;
 } TomlDoc;
 
-/* Parse a TOML file at path. Returns 1 on success, 0 on error. */
 int toml_parse(const char *path, TomlDoc *doc);
-
-/* Get value from a [section] by key. Returns NULL if not found. */
 const TomlValue *toml_get(const TomlDoc *doc, const char *section,
                           const char *key);
-
-/* Count [[section]] array-of-tables entries. */
 int toml_table_count(const TomlDoc *doc, const char *section);
-
-/* Get value from the idx-th [[section]] table by key. */
 const TomlValue *toml_table_get(const TomlDoc *doc, const char *section,
                                 int idx, const char *key);

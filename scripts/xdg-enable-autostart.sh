@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 # xdg-enable-autostart.sh — Enable XDG autostart for standalone window managers
-# Window managers like DWM, i3, bspwm, etc. don't activate the systemd
-# graphical-session.target, so XDG autostart .desktop files never run.
-# This script creates the necessary systemd user service and wires up the
-# environment so that ~/.config/autostart/ and /etc/xdg/autostart/ entries
-# are launched on login.
 set -euo pipefail
 
 # Use real grep, not rg alias
@@ -27,7 +22,6 @@ SERVICE_NAME="wm-graphical-session"
 SERVICE_DIR="${HOME}/.config/systemd/user"
 SERVICE_FILE="${SERVICE_DIR}/${SERVICE_NAME}.service"
 
-# ─── Pre-flight checks ───────────────────────────────────────────────────────
 header "Pre-flight Checks"
 
 if ! command -v systemctl &>/dev/null; then
@@ -63,7 +57,6 @@ for target in graphical-session.target xdg-desktop-autostart.target; do
     fi
 done
 
-# ─── Current state ───────────────────────────────────────────────────────────
 header "Current State"
 
 GS_STATE=$(systemctl --user is-active graphical-session.target 2>/dev/null || echo "inactive")
@@ -81,7 +74,6 @@ if [[ "$GS_STATE" == "active" && "$XDG_STATE" == "active" ]]; then
     fi
 fi
 
-# ─── Detect autostart entries ────────────────────────────────────────────────
 header "Autostart Entries"
 
 USER_ENTRIES=0
@@ -99,7 +91,6 @@ if [[ $USER_ENTRIES -gt 0 ]]; then
     find "${HOME}/.config/autostart" -name '*.desktop' -printf '    %f\n' 2>/dev/null
 fi
 
-# ─── Create systemd user service ─────────────────────────────────────────────
 header "Installing Systemd User Service"
 
 mkdir -p "$SERVICE_DIR"
@@ -128,7 +119,6 @@ UNIT
 
 pass "Created ${SERVICE_FILE}"
 
-# ─── Enable the service ──────────────────────────────────────────────────────
 header "Enabling Service"
 
 systemctl --user daemon-reload
@@ -137,7 +127,6 @@ pass "Reloaded systemd user daemon"
 systemctl --user enable "$SERVICE_NAME.service" 2>/dev/null
 pass "Enabled ${SERVICE_NAME}.service"
 
-# ─── Activate now if in a graphical session ──────────────────────────────────
 header "Activating"
 
 if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
@@ -162,7 +151,6 @@ else
     info "No graphical session detected — service will activate on next login"
 fi
 
-# ─── Detect xinitrc and offer to patch it ─────────────────────────────────────
 header "Shell Startup Integration"
 
 ENV_SNIPPET='# Export display env to systemd user session (needed for XDG autostart)
@@ -231,7 +219,6 @@ if [[ "$PATCHED" == false ]]; then
     echo ""
 fi
 
-# ─── Verify ──────────────────────────────────────────────────────────────────
 header "Verification"
 
 GS_FINAL=$(systemctl --user is-active graphical-session.target 2>/dev/null || echo "inactive")
@@ -256,8 +243,7 @@ if [[ $GENERATED -gt 0 ]]; then
     done
 fi
 
-# ─── Summary ─────────────────────────────────────────────────────────────────
-echo ""
+# List which autostart services systemd generated
 echo -e "${BOLD}════════════════════════════════════════════════════════════${RESET}"
 echo -e "${BOLD}  XDG Autostart Setup Complete${RESET}"
 echo -e "${BOLD}════════════════════════════════════════════════════════════${RESET}"

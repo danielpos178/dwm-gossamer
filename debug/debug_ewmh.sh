@@ -41,7 +41,6 @@ if [ -n "$(xprop -root _NET_CLIENT_LIST | cut -d'#' -f2)" ]; then
             xprop -id "$win_id" WM_NAME 2>/dev/null | cut -d'=' -f2 || echo "  Name: (unknown)"
             xprop -id "$win_id" _NET_WM_DESKTOP 2>/dev/null || echo "  Desktop: (not set)"
             
-            # Get window geometry to check if visible
             win_geom=$(xwininfo -id "$win_id" 2>/dev/null | grep "Absolute upper-left X")
             if [ -n "$win_geom" ]; then
                 x_pos=$(echo "$win_geom" | awk '{print $4}')

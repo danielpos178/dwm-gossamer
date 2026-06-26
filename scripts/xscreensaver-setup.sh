@@ -1,9 +1,5 @@
 #!/bin/bash
-# ─────────────────────────────────────────────────────────
 # xscreensaver-setup.sh — Install and configure xscreensaver
-# Detects the package manager, installs xscreensaver, writes
-# a sensible default config, and sets it up to start on login.
-# ─────────────────────────────────────────────────────────
 set -euo pipefail
 
 RED='\033[0;31m'
@@ -19,7 +15,6 @@ warn()  { echo -e "  ${YELLOW}[WARN]${NC} $1"; }
 fail()  { echo -e "  ${RED}[FAIL]${NC} $1"; exit 1; }
 header(){ echo -e "\n${BOLD}=== $1 ===${NC}"; }
 
-# ── Detect package manager and install ───────────────────
 header "Installing xscreensaver"
 
 install_pkg() {
@@ -54,7 +49,6 @@ else
     fi
 fi
 
-# ── Write default configuration ──────────────────────────
 header "Configuring xscreensaver"
 
 XSCREENSAVER_CONFIG="$HOME/.xscreensaver"
@@ -85,7 +79,6 @@ EOF
 
 pass "Config written to $XSCREENSAVER_CONFIG"
 
-# ── Set up autostart ─────────────────────────────────────
 header "Setting up autostart"
 
 AUTOSTART_DIR="$HOME/.config/autostart"
@@ -115,7 +108,6 @@ else
     pass "xscreensaver daemon started"
 fi
 
-# ── Summary ──────────────────────────────────────────────
 header "Done"
 echo ""
 info "xscreensaver is installed and will start on login."

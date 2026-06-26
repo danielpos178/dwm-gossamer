@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# nvidia-suspend-test.sh — Comprehensive NVIDIA suspend/resume readiness checker
-# Tests all factors required for reliable suspend/resume with NVIDIA GPUs on Linux.
+# nvidia-suspend-test.sh — NVIDIA suspend/resume readiness checker
 set -euo pipefail
 
 # Use real grep, not rg alias
@@ -23,7 +22,6 @@ warn()  { WARN=$((WARN + 1)); echo -e "  ${YELLOW}[WARN]${RESET} $1"; }
 info()  { echo -e "  ${CYAN}[INFO]${RESET} $1"; }
 header(){ echo -e "\n${BOLD}=== $1 ===${RESET}"; }
 
-# ─── GPU & Driver ───────────────────────────────────────────────────────────────
 header "GPU & Driver Info"
 
 if command -v nvidia-smi &>/dev/null; then
@@ -45,7 +43,6 @@ else
     warn "/proc/driver/nvidia/version not found"
 fi
 
-# ─── NVIDIA Kernel Modules Loaded ────────────────────────────────────────────────
 header "NVIDIA Kernel Modules"
 
 REQUIRED_MODULES=(nvidia nvidia_modeset nvidia_drm)
@@ -67,7 +64,6 @@ for mod in "${OPTIONAL_MODULES[@]}"; do
     fi
 done
 
-# ─── DRM Modeset ─────────────────────────────────────────────────────────────────
 header "DRM Kernel Mode Setting (KMS)"
 
 # Check kernel command line
@@ -102,7 +98,6 @@ else
     info "Could not read nvidia_drm fbdev parameter"
 fi
 
-# ─── PreserveVideoMemoryAllocations ─────────────────────────────────────────────
 header "PreserveVideoMemoryAllocations"
 
 # Check modprobe config
@@ -136,7 +131,6 @@ else
     info "NVreg_TemporaryFilePath not explicitly set (defaults to /tmp)"
 fi
 
-# ─── /proc/driver/nvidia/suspend ─────────────────────────────────────────────────
 header "NVIDIA Suspend Interface"
 
 if [[ -f /proc/driver/nvidia/suspend ]]; then
@@ -145,7 +139,6 @@ else
     fail "/proc/driver/nvidia/suspend MISSING — nvidia suspend/resume cannot work"
 fi
 
-# ─── nvidia-sleep.sh ─────────────────────────────────────────────────────────────
 header "nvidia-sleep.sh Script"
 
 if [[ -x /usr/bin/nvidia-sleep.sh ]]; then
@@ -154,7 +147,6 @@ else
     fail "/usr/bin/nvidia-sleep.sh missing or not executable"
 fi
 
-# ─── Systemd Services ───────────────────────────────────────────────────────────
 header "Systemd Suspend/Resume Services"
 
 SERVICES=(nvidia-suspend nvidia-resume nvidia-hibernate)
@@ -183,7 +175,6 @@ else
     fail "nvidia-resume.service NOT a dependency of systemd-suspend.service"
 fi
 
-# ─── nvidia-persistenced ─────────────────────────────────────────────────────────
 header "NVIDIA Persistence Daemon"
 
 PERSIST_ENABLED=$(systemctl is-enabled nvidia-persistenced.service 2>/dev/null || echo "not-found")
@@ -201,7 +192,6 @@ else
     fail "nvidia-persistenced.service NOT running — run: sudo systemctl start nvidia-persistenced.service"
 fi
 
-# ─── Initramfs / Early KMS ───────────────────────────────────────────────────────
 header "Initramfs (Early KMS)"
 
 if [[ -f /etc/mkinitcpio.conf ]]; then
@@ -277,7 +267,6 @@ else
     warn "Could not verify initramfs contents (image not found or no lsinitcpio/lsinitrd)"
 fi
 
-# ─── Sleep Mode ──────────────────────────────────────────────────────────────────
 header "System Sleep Configuration"
 
 if [[ -f /sys/power/state ]]; then
@@ -300,7 +289,6 @@ if [[ -f /sys/power/mem_sleep ]]; then
     fi
 fi
 
-# ─── S0ix Power Management ──────────────────────────────────────────────────────
 header "S0ix / Modern Standby"
 
 if [[ -f /proc/driver/nvidia/params ]]; then
@@ -317,7 +305,6 @@ if [[ -f /proc/driver/nvidia/params ]]; then
     fi
 fi
 
-# ─── Display Server ─────────────────────────────────────────────────────────────
 header "Display Server"
 
 SESSION_TYPE="${XDG_SESSION_TYPE:-unknown}"
@@ -337,7 +324,6 @@ for dm in sddm gdm lightdm; do
     fi
 done
 
-# ─── Recent Suspend/Resume Logs ──────────────────────────────────────────────────
 header "Recent Suspend/Resume Journal Entries"
 
 JOURNAL_ENTRIES=$(journalctl -b -u nvidia-suspend.service -u nvidia-resume.service --no-pager -n 20 2>/dev/null || echo "")
@@ -359,7 +345,6 @@ if [[ -n "$PM_ERRORS" && "$PM_ERRORS" != *"No entries"* && "$PM_ERRORS" != *"-- 
     done
 fi
 
-# ─── DKMS Status ─────────────────────────────────────────────────────────────────
 header "DKMS Status"
 
 if command -v dkms &>/dev/null; then
@@ -390,7 +375,6 @@ if [[ -d "/usr/lib/modules/${KERNEL}/extramodules" ]]; then
     fi
 fi
 
-# ─── USB Autosuspend (common wake issue) ─────────────────────────────────────────
 header "USB Autosuspend (wake issues)"
 
 if [[ -f /etc/modprobe.d/disable-usb-autosuspend.conf ]]; then

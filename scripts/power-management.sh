@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
-# =============================================================================
 # power-management.sh — Laptop Power Management Overview & Tuning
-# =============================================================================
-# Displays current power management state and optionally applies improvements.
 #
 # Usage:
 #   ./power-management.sh             # show status report
 #   ./power-management.sh --apply     # apply sysfs power settings (needs root)
 #   ./power-management.sh --apply-tlp # write TLP config & run tlp start (needs root)
 #   ./power-management.sh --help      # show this help
-#
-# Hardware: Intel Raptor Lake-P / Iris Xe / DisplayLink (evdi DKMS)
-# OS:       Arch Linux (linux-lts / cachyos kernels)
-# =============================================================================
 
 set -euo pipefail
 
@@ -35,7 +28,6 @@ if ( $APPLY || $APPLY_TLP ) && [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Color helpers
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 
@@ -48,7 +40,6 @@ bad()  { echo -e "  ${RED}✘${RESET}  $1"; }
 
 read_sys() { cat "$1" 2>/dev/null || echo "N/A"; }
 
-# ── Init system detection (systemd vs runit/elogind) ────
 has_systemd() { command -v systemctl &>/dev/null; }
 
 svc_is_active() {
@@ -79,9 +70,6 @@ pkg_install_hint() {
     fi
 }
 
-# =============================================================================
-# 1. SYSTEM IDENTITY
-# =============================================================================
 hdr "System Identity"
 KERNEL=$(uname -r)
 CPU=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "Unknown")
@@ -90,9 +78,6 @@ info "CPU      : $CPU"
 info "Hostname : $(cat /etc/hostname 2>/dev/null || echo unknown)"
 info "Uptime   : $(uptime -p 2>/dev/null || echo N/A)"
 
-# =============================================================================
-# 2. BATTERY STATUS
-# =============================================================================
 hdr "Battery Status"
 BAT_PATH="/sys/class/power_supply/BAT0"
 if [[ -d "$BAT_PATH" ]]; then
@@ -103,7 +88,7 @@ if [[ -d "$BAT_PATH" ]]; then
     MODEL=$(read_sys "$BAT_PATH/model_name")
     CYCLES=$(read_sys "$BAT_PATH/cycle_count")
 
-    # charge_full / charge_full_design in µAh → Ah
+# charge_full / charge_full_design in µAh → Ah
     CHARGE_FULL=$(read_sys "$BAT_PATH/charge_full")
     CHARGE_DESIGN=$(read_sys "$BAT_PATH/charge_full_design")
     VOLTAGE=$(read_sys "$BAT_PATH/voltage_now")  # µV
@@ -146,9 +131,6 @@ else
     warn "No BAT0 found — may be running on AC only or battery sensor missing"
 fi
 
-# =============================================================================
-# 3. SLEEP / STANDBY STATE
-# =============================================================================
 hdr "Sleep & Standby States"
 AVAIL_STATES=$(read_sys /sys/power/state)
 MEM_SLEEP=$(read_sys /sys/power/mem_sleep)
@@ -189,9 +171,6 @@ else
     fi
 fi
 
-# =============================================================================
-# 4. LOGIND POWER EVENT HANDLING
-# =============================================================================
 if has_systemd; then
     hdr "Logind Power Event Configuration (/etc/systemd/logind.conf)"
     LOGIND_CONF="/etc/systemd/logind.conf"
@@ -224,9 +203,6 @@ while IFS= read -r line; do
     esac
 done <<< "$ACTIVE_VALS"
 
-# =============================================================================
-# 5. SYSTEMD SLEEP CONFIGURATION
-# =============================================================================
 if has_systemd; then
     hdr "Systemd Sleep Configuration (/etc/systemd/sleep.conf)"
     SLEEP_CONF="/etc/systemd/sleep.conf"
@@ -257,9 +233,6 @@ else
     fi
 fi
 
-# =============================================================================
-# 6. CPU FREQUENCY GOVERNOR
-# =============================================================================
 hdr "CPU Frequency Scaling"
 DRIVER=$(read_sys /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver)
 GOV=$(read_sys /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
@@ -291,9 +264,6 @@ if [[ "$EPP" != "N/A" ]]; then
     [[ -n "$AVAIL_EPP" ]] && info "Available EPP   : $AVAIL_EPP"
 fi
 
-# =============================================================================
-# 7. DKMS STATUS
-# =============================================================================
 hdr "DKMS Modules"
 if command -v dkms &>/dev/null; then
     DKMS_OUT=$(dkms status 2>/dev/null)
@@ -338,9 +308,6 @@ else
     warn "dkms not found — cannot check DKMS module status"
 fi
 
-# =============================================================================
-# 8. ACPI WAKEUP SOURCES
-# =============================================================================
 hdr "ACPI Wakeup Sources"
 WAKEUP_FILE="/proc/acpi/wakeup"
 if [[ -f "$WAKEUP_FILE" ]]; then
@@ -363,9 +330,6 @@ else
     warn "/proc/acpi/wakeup not available"
 fi
 
-# =============================================================================
-# 9. POWER MANAGEMENT SERVICES
-# =============================================================================
 if has_systemd; then
     hdr "Power Management Services"
     SERVICES=(upower.service tlp.service thermald.service auto-cpufreq.service \
@@ -460,9 +424,6 @@ if command -v tlp-stat &>/dev/null; then
     info "Platform profile: not available on this machine (ACPI sysfs absent)"
 fi
 
-# =============================================================================
-# 10. XSET & DPMS (DISPLAY POWER MANAGEMENT SIGNALING)
-# =============================================================================
 hdr "Xset & DPMS (Display Power Management Signaling)"
 if ! command -v xset &>/dev/null; then
     warn "xset not found — cannot query DPMS (X server may not be running or xset not installed)"
@@ -534,9 +495,6 @@ else
     fi
 fi
 
-# =============================================================================
-# 12. PCI RUNTIME POWER MANAGEMENT
-# =============================================================================
 hdr "PCI Device Runtime Power Management"
 TOTAL=0; AUTO=0; ON=0
 for ctrl in /sys/bus/pci/devices/*/power/control; do
@@ -552,9 +510,6 @@ if (( ON > 0 )); then
     info "  for f in /sys/bus/pci/devices/*/power/control; do echo auto | sudo tee \"\$f\"; done"
 fi
 
-# =============================================================================
-# 13. KERNEL CMDLINE POWER PARAMETERS
-# =============================================================================
 hdr "Kernel Command Line (power-relevant)"
 CMDLINE=$(strings /proc/cmdline 2>/dev/null || cat /proc/cmdline 2>/dev/null)
 info "Full cmdline: $CMDLINE"
@@ -574,9 +529,6 @@ if ! $found_any; then
     info "Edit /etc/default/grub or /boot/loader/entries/*.conf"
 fi
 
-# =============================================================================
-# 14. SUMMARY & RECOMMENDATIONS
-# =============================================================================
 hdr "Summary & Recommendations"
 echo -e "${BOLD}Current state:${RESET}"
 info "Sleep mode    : $(read_sys /sys/power/mem_sleep | tr -d '[]' | xargs) (s2idle active)"
@@ -695,9 +647,6 @@ fi
 
 (( REC_N == 0 )) && ok "All recommendations already satisfied — system is fully optimized!"
 
-# =============================================================================
-# --apply: Apply safe, non-destructive power improvements
-# =============================================================================
 if $APPLY; then
     hdr "Applying Recommended Settings"
 
@@ -745,9 +694,6 @@ if $APPLY; then
     warn "Use TLP, a udev rule, or kernel params for persistence."
 fi
 
-# =============================================================================
-# --apply-tlp: Write TLP recommended settings and activate
-# =============================================================================
 if $APPLY_TLP; then
     hdr "Applying TLP Recommendations"
 

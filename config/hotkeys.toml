@@ -50,8 +50,9 @@
 # Define shortcuts here, then use $name in any exec or cmd value below.
 
 [vars]
-terminal = "alacritty"
-webapp   = "webapp-launch"
+terminal   = "alacritty"
+webapp     = "webapp-launch"
+kblayouts  = "us ro"
 
 # ── KEYBINDINGS ───────────────────────────────────────────────────────────────
 # One binding per line.  Save the file to reload instantly.
@@ -63,6 +64,7 @@ keys = [
   { mod="SUPER",            key="t",       desc="App launcher",            func="spawn",       exec=["rofi", "-show", "drun"] },
   { mod="SUPER",            key="r",       desc="App launcher",            func="spawn",       exec=["vicinae", "toggle"] },
   { mod="SUPER",            key="x",       desc="Terminal",                func="spawn",       exec=["$terminal"] },
+  { mod="SUPER",            key="space",   desc="Switch keyboard layout",  func="spawn",       cmd="dwm-kblayout next" },
   { mod="SUPER",            key="w",       desc="Looking Glass (VM)",      func="spawn",       cmd="looking-glass-client -F" },
   { mod="SUPER SHIFT",      key="w",       desc="Randomize wallpaper",     func="spawn",       cmd="feh --randomize --bg-fill ~/Pictures/backgrounds/*" },
 

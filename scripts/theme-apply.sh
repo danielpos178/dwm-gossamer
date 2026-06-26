@@ -1,22 +1,14 @@
 #!/bin/bash
 # theme-apply.sh — Apply the active theme from themes.toml to all apps.
-#
-# Called automatically by DWM on config reload (SIGUSR1 / file save).
-# Can also be run manually: theme-apply.sh
-#
-# Updates: alacritty · kitty · rofi · polybar
 
 set -euo pipefail
 
-# ── Locate themes.toml ────────────────────────────────────────────────────────
 THEMES_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dwm-titus/themes.toml"
 if [[ ! -f "$THEMES_FILE" ]]; then
     echo "theme-apply: themes.toml not found at $THEMES_FILE" >&2
     exit 1
 fi
 
-# ── Minimal TOML section reader ───────────────────────────────────────────────
-# toml_get SECTION KEY FILE — prints the value or empty string
 toml_get() {
     local section="$1" key="$2" file="$3"
     awk -v sec="[$section]" -v key="$key" '
@@ -31,7 +23,6 @@ toml_get() {
     ' "$file"
 }
 
-# ── Read active theme name ────────────────────────────────────────────────────
 THEME_NAME="$(toml_get "active" "theme" "$THEMES_FILE")"
 if [[ -z "$THEME_NAME" ]]; then
     echo "theme-apply: no [active] theme set in $THEMES_FILE" >&2
@@ -40,12 +31,10 @@ fi
 
 SECTION="theme.$THEME_NAME"
 
-# ── Helper: read a value from the active theme section ───────────────────────
 theme_get() {
     toml_get "$SECTION" "$1" "$THEMES_FILE"
 }
 
-# ── Read all theme values ─────────────────────────────────────────────────────
 TERM_BG="$(theme_get term_bg)"
 TERM_FG="$(theme_get term_fg)"
 TERM_CURSOR="$(theme_get term_cursor)"
@@ -80,9 +69,6 @@ DARK_MODE="$(theme_get dark_mode)"
 [[ "$DARK_MODE" != "false" ]] && DARK_MODE="true"  # default to dark if unset
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ALACRITTY — write ~/.config/alacritty/active-theme.toml
-# ══════════════════════════════════════════════════════════════════════════════
 ALACRITTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/alacritty"
 if [[ -d "$ALACRITTY_DIR" ]]; then
     cat > "$ALACRITTY_DIR/active-theme.toml" <<EOF
@@ -133,9 +119,6 @@ EOF
 fi
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# KITTY — write ~/.config/kitty/active-theme.conf
-# ══════════════════════════════════════════════════════════════════════════════
 KITTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/kitty"
 if [[ -d "$KITTY_DIR" ]]; then
     cat > "$KITTY_DIR/active-theme.conf" <<EOF
@@ -178,9 +161,6 @@ EOF
 fi
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ROFI — update @theme line in ~/.config/rofi/config.rasi
-# ══════════════════════════════════════════════════════════════════════════════
 ROFI_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/config.rasi"
 if [[ -n "$ROFI_THEME" && -f "$ROFI_CFG" ]]; then
     if grep -q '@theme' "$ROFI_CFG"; then
@@ -191,9 +171,6 @@ if [[ -n "$ROFI_THEME" && -f "$ROFI_CFG" ]]; then
 fi
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# POLYBAR — fully replace ~/.config/polybar/themes/minimal/colors.ini
-# ══════════════════════════════════════════════════════════════════════════════
 PB_COLORS="${XDG_CONFIG_HOME:-$HOME/.config}/polybar/themes/minimal/colors.ini"
 if [[ -n "$PB_BG" ]]; then
     mkdir -p "$(dirname "$PB_COLORS")"
@@ -238,9 +215,6 @@ EOF
 fi
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# GTK DARK / LIGHT MODE
-# ══════════════════════════════════════════════════════════════════════════════
 if [[ "$DARK_MODE" == "true" ]]; then
     GTK_COLOR_SCHEME="prefer-dark"
     GTK_DARK_PREF=1
@@ -258,7 +232,6 @@ else
     GTK_THEME_NAME="Adwaita"
 fi
 
-# Helper: set or add a key in a [Settings] ini file without destroying other settings
 gtk_ini_set() {
     local file="$1" key="$2" value="$3"
     mkdir -p "$(dirname "$file")"
@@ -297,10 +270,7 @@ if command -v gsettings &>/dev/null; then
 fi
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# QT DARK / LIGHT MODE
-# ══════════════════════════════════════════════════════════════════════════════
-# Prefer qt6ct > qt5ct; fall back to gtk3 (inherits GTK theme set above)
+# Prefer qt6ct > qt5ct; fall back to gtk3
 if command -v qt6ct &>/dev/null; then
     QT_PLATFORM_THEME="qt6ct"
 elif command -v qt5ct &>/dev/null; then

@@ -1,15 +1,5 @@
 #!/bin/bash
 # test-install.sh — Integration test for dwm-titus TOML config loading
-#
-# Simulates a fresh install in an isolated $HOME under /tmp, starts dwm
-# against a headless Xvfb display, and checks whether it loads (or falls
-# back) correctly for three scenarios:
-#   1. Normal  – both user and default configs present
-#   2. Missing – user config dir absent, only defaults present  (fallback)
-#   3. Invalid – user TOML is malformed                         (fallback)
-#
-# Usage:  bash debug/test-install.sh
-#         (run from the repo root, or any directory)
 
 set -euo pipefail
 
@@ -23,7 +13,6 @@ ok()   { printf '\033[0;32m[PASS]\033[0m  %s\n' "$1"; PASS=$((PASS+1)); }
 fail() { printf '\033[0;31m[FAIL]\033[0m  %s\n' "$1"; FAIL=$((FAIL+1)); }
 sep()  { echo "──────────────────────────────────────────────────────────"; }
 
-# ── Prerequisites ─────────────────────────────────────────────────────────────
 if [ ! -x "$DWM_BIN" ]; then
     echo "ERROR: dwm binary not found at $DWM_BIN — run 'make' first."
     exit 1
@@ -54,13 +43,9 @@ start_xvfb() {
     fi
 }
 
-# ── Helper: run dwm in an isolated HOME ───────────────────────────────────────
+
 # $1 = scenario name
 # $2 = fake HOME dir (caller populates it before calling)
-# Returns 0 if dwm exited on its own within the timeout (bad - means it crashed
-#  immediately) or within hang secs we kill it (good - it ran).
-# Actually since dwm won't get any client connections / events it may exit fast.
-# We capture stderr to check for TOML load messages.
 run_dwm() {
     local name="$1" fake_home="$2"
     local log="/tmp/dwm-test-${name// /-}.log"
@@ -110,9 +95,6 @@ dwm_ran_ok() {
     return 0
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# START
-# ─────────────────────────────────────────────────────────────────────────────
 echo ""
 echo "╔════════════════════════════════════════════╗"
 echo "║   dwm-titus TOML config integration test  ║"
@@ -125,9 +107,7 @@ echo ""
 
 start_xvfb
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Scenario 1: Normal — user + default configs present
-# ─────────────────────────────────────────────────────────────────────────────
 sep
 log "Scenario 1: both user and default configs present"
 FAKE1=$(mktemp -d /tmp/dwm-test-home-XXXXX)
@@ -143,9 +123,7 @@ else
 fi
 rm -rf "$FAKE1"
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Scenario 2: Missing user config — only defaults present → fallback + notify
-# ─────────────────────────────────────────────────────────────────────────────
 sep
 log "Scenario 2: user config dir absent (fallback to defaults expected)"
 FAKE2=$(mktemp -d /tmp/dwm-test-home-XXXXX)
@@ -167,9 +145,7 @@ else
 fi
 rm -rf "$FAKE2"
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Scenario 3: Invalid TOML in user config → fallback to defaults
-# ─────────────────────────────────────────────────────────────────────────────
 sep
 log "Scenario 3: malformed user TOML (fallback to defaults expected)"
 FAKE3=$(mktemp -d /tmp/dwm-test-home-XXXXX)
@@ -190,9 +166,7 @@ else
 fi
 rm -rf "$FAKE3"
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Scenario 4: No configs at all (both dirs absent) — should still not crash
-# ─────────────────────────────────────────────────────────────────────────────
 sep
 log "Scenario 4: no configs at all (hardcoded Nord fallback expected)"
 FAKE4=$(mktemp -d /tmp/dwm-test-home-XXXXX)
@@ -207,9 +181,7 @@ else
 fi
 rm -rf "$FAKE4"
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Summary
-# ─────────────────────────────────────────────────────────────────────────────
 sep
 echo ""
 printf "Results: \033[0;32m%d passed\033[0m  \033[0;31m%d failed\033[0m\n" "$PASS" "$FAIL"

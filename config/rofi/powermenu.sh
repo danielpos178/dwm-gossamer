@@ -5,11 +5,9 @@
 set -e
 set -u
 
-# ── Supported choices ────────────────────────────────────────────────────────
 all=(shutdown reboot suspend hibernate logout lockscreen)
 show=("${all[@]}")
 
-# ── Text labels ──────────────────────────────────────────────────────────────
 declare -A texts
 texts[lockscreen]="lock screen"
 texts[logout]="log out"
@@ -18,7 +16,6 @@ texts[hibernate]="hibernate"
 texts[reboot]="reboot"
 texts[shutdown]="shut down"
 
-# ── Icons (Nerd Font + Material) ─────────────────────────────────────────────
 declare -A icons
 declare -A nerd_font_icons
 declare -A material_icons
@@ -39,13 +36,11 @@ material_icons[reboot]="restart_alt"
 material_icons[shutdown]="power_settings_new"
 material_icons[cancel]="close"
 
-# ── Actions (init-system aware) ──────────────────────────────────────────────
 declare -A actions
 actions[lockscreen]="loginctl lock-session ${XDG_SESSION_ID-}"
 actions[logout]="loginctl terminate-session ${XDG_SESSION_ID-}"
 
 if [ -d /run/systemd/system ]; then
-    # systemd (Arch, Fedora, etc.)
     actions[suspend]="systemctl suspend"
     actions[hibernate]="systemctl hibernate"
     actions[reboot]="systemctl reboot"
@@ -58,15 +53,12 @@ else
     actions[shutdown]="poweroff"
 fi
 
-# Actions requiring confirmation before executing
 confirmations=(reboot shutdown logout)
 
-# ── Defaults ─────────────────────────────────────────────────────────────────
 dryrun=false
 showsymbols=true
 showtext=true
 
-# ── Font helpers ─────────────────────────────────────────────────────────────
 font_exists() {
     fc-match "$1" 2>/dev/null | command grep -Fqi "$1"
 }
@@ -115,7 +107,6 @@ if detected_symbols_font=$(detect_symbols_font); then
 fi
 set_icons "$symbols_font"
 
-# ── Validation ───────────────────────────────────────────────────────────────
 require_valid_action() {
     local option="$1"; shift
     local entry
@@ -127,7 +118,6 @@ require_valid_action() {
     done
 }
 
-# ── Parse CLI options ────────────────────────────────────────────────────────
 parsed=$(getopt --options=h \
     --longoptions=help,dry-run,confirm:,choices:,choose:,symbols,no-symbols,text,no-text,symbols-font: \
     --name "$0" -- "$@")
@@ -184,7 +174,6 @@ if [ "$showsymbols" = "false" ] && [ "$showtext" = "false" ]; then
     exit 1
 fi
 
-# ── Message builders ─────────────────────────────────────────────────────────
 write_message() {
     local icon text
     if [ -n "$symbols_font" ]; then
@@ -209,36 +198,35 @@ print_selection() {
     printf '%b' "$1"
 }
 
-# ── Build message tables ────────────────────────────────────────────────────
 declare -A messages
 declare -A confirmationMessages
 
 for entry in "${all[@]}"; do
     messages[$entry]=$(write_message "${icons[$entry]}" "${texts[$entry]^}")
-    # Zero-width space in icon prevents confirmation messages colliding with regular ones
+
+
+# Zero-width space in icon prevents confirmation messages colliding with regular ones
     confirmationMessages[$entry]=$(write_message "${icons[$entry]}\u200b" "Yes, ${texts[$entry]}")
 done
 confirmationMessages[cancel]=$(write_message "${icons[cancel]}" "No, cancel")
 
-# ── Determine selection ──────────────────────────────────────────────────────
 if [ $# -gt 0 ]; then
     selection="$*"
 elif [ -n "${selectionID+x}" ]; then
     selection="${messages[$selectionID]}"
 fi
 
-# ── If not invoked by rofi, launch rofi with this script as the mode ─────────
+# If not invoked by rofi, launch rofi with this script as the mode
 if [ -z "${ROFI_RETV+x}" ]; then
     exec rofi -show powermenu -modi "powermenu:$0" \
         -config "$HOME/.config/rofi/config.rasi" \
         -theme-str 'window { location: center; anchor: center; height: 215px; width: 200px; border: 2px solid; margin: 0; } mainbox { margin: 0; spacing: 0; } listview { margin: 0; spacing: 0; } inputbar { enabled: false; }'
 fi
 
-# ── Rofi protocol headers ───────────────────────────────────────────────────
 echo -e "\0no-custom\x1ftrue"
 echo -e "\0markup-rows\x1ftrue"
 
-# ── No selection yet → show menu ─────────────────────────────────────────────
+# No selection yet → show menu
 if [ -z "${selection+x}" ]; then
     echo -e "\0prompt\x1fPower menu"
     for entry in "${show[@]}"; do
@@ -247,7 +235,7 @@ if [ -z "${selection+x}" ]; then
     exit 0
 fi
 
-# ── Selection received → find matching action ────────────────────────────────
+# Selection received → find matching action
 for entry in "${show[@]}"; do
     # Match against the regular message (user clicked an item)
     if [ "$selection" = "$(print_selection "${messages[$entry]}")" ]; then

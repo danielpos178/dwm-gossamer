@@ -152,9 +152,6 @@ drw_picture_create_resized(Drw *drw, char *src, unsigned int srcw, unsigned int 
 	return pic;
 }
 
-/* This function is an implementation detail. Library users should use
- * drw_fontset_create instead.
- */
 static Fnt *
 xfont_create(Drw *drw, const char *fontname, FcPattern *fontpattern)
 {
@@ -163,11 +160,6 @@ xfont_create(Drw *drw, const char *fontname, FcPattern *fontpattern)
 	FcPattern *pattern = NULL;
 
 	if (fontname) {
-		/* Using the pattern found at font->xfont->pattern does not yield the
-		 * same substitution results as using the pattern returned by
-		 * FcNameParse; using the latter results in the desired fallback
-		 * behaviour whereas the former just results in missing-character
-		 * rectangles being drawn, at least with some fonts. */
 		if (!(xfont = XftFontOpenName(drw->dpy, drw->screen, fontname))) {
 			fprintf(stderr, "error, cannot load font from name: '%s'\n", fontname);
 			return NULL;
@@ -245,14 +237,12 @@ drw_clr_create(Drw *drw, Clr *dest, const char *clrname)
 		die("error, cannot allocate color '%s'", clrname);
 }
 
-/* Create color schemes. */
 Clr *
 drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount)
 {
 	size_t i;
 	Clr *ret;
 
-	/* need at least two colors for a scheme */
 	if (!drw || !clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(Clr))))
 		return NULL;
 
@@ -267,7 +257,6 @@ drw_clr_free(Drw *drw, Clr *c)
 	if (!drw || !c)
 		return;
 
-	/* c is typedef XftColor Clr */
 	XftColorFree(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
 	             DefaultColormap(drw->dpy, drw->screen), c);
 }
@@ -326,7 +315,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 	FcPattern *match;
 	XftResult result;
 	int charexists = 0, overflow = 0;
-	/* keep track of a couple codepoints for which we have no match. */
 	static unsigned int nomatches[128], ellipsis_width, invalid_width;
 	static const char invalid[] = "�";
 
@@ -363,7 +351,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 				if (charexists) {
 					drw_font_getexts(curfont, text, utf8charlen, &tmpw, NULL);
 					if (ew + ellipsis_width <= w) {
-						/* keep track where the ellipsis still fits */
 						ellipsis_x = x + ew;
 						ellipsis_w = w - ew;
 						ellipsis_len = utf8strlen;
@@ -371,9 +358,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 
 					if (ew + tmpw > w) {
 						overflow = 1;
-						/* called from drw_fontset_getwidth_clamp():
-						 * it wants the width AFTER the overflow
-						 */
 						if (!render)
 							x += tmpw;
 						else
@@ -419,8 +403,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			charexists = 0;
 			usedfont = nextfont;
 		} else {
-			/* Regardless of whether or not a fallback font is found, the
-			 * character must be drawn. */
 			charexists = 1;
 
 			hash = (unsigned int)utf8codepoint;
@@ -428,7 +410,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			hash = ((hash >> 15) ^ hash) * 0xD35A2D97;
 			h0 = ((hash >> 15) ^ hash) % LENGTH(nomatches);
 			h1 = (hash >> 17) % LENGTH(nomatches);
-			/* avoid expensive XftFontMatch call when we know we won't find a match */
 			if (nomatches[h0] == utf8codepoint || nomatches[h1] == utf8codepoint)
 				goto no_match;
 
@@ -436,7 +417,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			FcCharSetAddChar(fccharset, utf8codepoint);
 
 			if (!drw->fonts->pattern) {
-				/* Refer to the comment in xfont_create for more information. */
 				die("the first font in the cache must be loaded from a font string.");
 			}
 
@@ -453,9 +433,9 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 
 			if (match) {
 				usedfont = xfont_create(drw, NULL, match);
-				if (usedfont && XftCharExists(drw->dpy, usedfont->xfont, utf8codepoint)) {
-					for (curfont = drw->fonts; curfont->next; curfont = curfont->next)
-						; /* NOP */
+			if (usedfont && XftCharExists(drw->dpy, usedfont->xfont, utf8codepoint)) {
+				for (curfont = drw->fonts; curfont->next; curfont = curfont->next)
+					;
 					curfont->next = usedfont;
 				} else {
 					xfont_free(usedfont);
