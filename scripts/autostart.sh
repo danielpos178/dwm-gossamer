@@ -52,15 +52,24 @@ if command -v pipewire &>/dev/null && ! pgrep -x pipewire &>/dev/null; then
     if command -v pipewire-pulse &>/dev/null; then
         pipewire-pulse 2>/dev/null &
     fi
+    # Wait for PulseAudio socket so polybar's internal/pulseaudio module works
+    PA_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native"
+    i=0
+    while [ ! -S "$PA_SOCK" ] && [ "$i" -lt 30 ]; do
+        sleep 0.2
+        i=$((i + 1))
+    done
 fi
 
 # Polkit authentication agent (try common agents)
 for agent in \
+    /usr/libexec/polkit-mate-authentication-agent-1 \
     /usr/lib/mate-polkit/polkit-mate-authentication-agent-1 \
-    /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 \
     /usr/libexec/polkit-gnome-authentication-agent-1 \
-    /usr/lib/polkit-kde-authentication-agent-1 \
+    /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 \
     /usr/libexec/polkit-kde-authentication-agent-1 \
+    /usr/lib/polkit-kde/polkit-kde-authentication-agent-1 \
+    /usr/bin/xfce-polkit \
     /usr/bin/lxpolkit \
     /usr/lib/lxpolkit/lxpolkit; do
     if [ -x "$agent" ]; then

@@ -20,10 +20,9 @@ DISTRO_NAME="Void Linux"
 PKG_CMD="sudo xbps-install -Sy"
 
 setup_pkg_manager() {
-    # Sync repos before installing anything
     sudo xbps-install -Sy >/dev/null 2>&1
 
-    # Enable nonfree repository (required for flameshot and others)
+    # Enable nonfree repository
     if [ ! -f /usr/share/xbps.d/10-repository-nonfree.conf ]; then
         echo "[INFO] Enabling nonfree repository..."
         sudo xbps-install -Sy --yes void-repo-nonfree >/dev/null 2>&1
@@ -54,10 +53,9 @@ disable_service() {
     fi
 }
 
-# Enable essential services for dwm-gossamer
 enable_essential_services() {
     info "Enabling essential runit services..."
-    for svc in dbus elogind NetworkManager; do
+    for svc in dbus elogind polkitd NetworkManager; do
         if enable_service "$svc"; then
             ok "$svc enabled."
         else
@@ -81,7 +79,7 @@ XORG_PKGS=(
 # elogind provides session/seat management, XDG_RUNTIME_DIR, and power event handling
 RUNTIME_DEPS=(
     rofi picom dunst feh flameshot dex mate-polkit polkit elogind alsa-utils dbus
-    git unzip xclip xprop Thunar gvfs tumbler arandr
+    mesa-dri mesa-gl mesa-egl git unzip xclip xprop Thunar gvfs tumbler arandr
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring
     NetworkManager network-manager-applet libnotify rsync

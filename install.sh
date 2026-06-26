@@ -150,15 +150,9 @@ fi
 # ── Essential system services (runit/Void Linux) ──────────
 # Enables dbus, elogind, and NetworkManager. On runit, elogind provides
 # session/seat management, XDG_RUNTIME_DIR, and power event handling.
+# On systemd (Arch), systemd-logind handles this natively — nothing to enable.
 if ! command -v systemctl &>/dev/null; then
     enable_essential_services
-fi
-
-# ── Enable elogind (systemd only — runit handled above) ──
-if command -v systemctl &>/dev/null; then
-    sudo systemctl enable --now elogind.service 2>/dev/null \
-        && ok "elogind seat/session management enabled." \
-        || warn "elogind not found — seat management may rely on systemd-logind."
 fi
 
 # ── Build & Install ──────────────────────────────────────
