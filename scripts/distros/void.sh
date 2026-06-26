@@ -10,8 +10,8 @@
 #   - Build deps use -devel suffix (not freetype2, not libx11)
 #   - Some packages have different names (Thunar, NetworkManager)
 #   - Uses nerd-fonts-ttf instead of ttf-meslo-nerd (not packaged on Void)
-#   - Uses seatd for minimal seat management (not elogind)
-#   - Uses lemurs as display manager
+#   - Uses elogind for session/seat management (provides logind, XDG_RUNTIME_DIR)
+#   - dwm is started manually via startx (no display manager)
 # ─────────────────────────────────────────────────────────
 
 DISTRO_NAME="Void Linux"
@@ -55,26 +55,15 @@ disable_service() {
 }
 
 # Enable essential services for dwm-gossamer
-# Must run BEFORE display manager — lemurs needs dbus + seatd active
 enable_essential_services() {
     info "Enabling essential runit services..."
-    for svc in dbus seatd NetworkManager; do
+    for svc in dbus elogind NetworkManager; do
         if enable_service "$svc"; then
             ok "$svc enabled."
         else
             warn "$svc service directory not found — skipping."
         fi
     done
-}
-
-# Enable display manager service
-enable_dm_service() {
-    local svc="$1"
-    if enable_service "$svc"; then
-        ok "$svc display manager enabled."
-    else
-        warn "Could not enable $svc — service directory not found."
-    fi
 }
 
 # ── Package Lists ────────────────────────────────────────
@@ -89,9 +78,9 @@ XORG_PKGS=(
     xf86-input-libinput libinput
 )
 
-# seatd replaces elogind for minimal seat management
+# elogind provides session/seat management, XDG_RUNTIME_DIR, and power event handling
 RUNTIME_DEPS=(
-    rofi picom dunst feh flameshot dex mate-polkit seatd alsa-utils
+    rofi picom dunst feh flameshot dex mate-polkit polkit elogind alsa-utils dbus
     git unzip xclip xprop Thunar gvfs tumbler arandr
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring
@@ -110,8 +99,6 @@ FONT_PKGS=(
 )
 TERMINAL_PKG=alacritty
 BAR_PKG=polybar
-DM_PKG=lemurs
-DM_SERVICE=lemurs
 
 # ── Distro-Specific Helpers ──────────────────────────────
 

@@ -36,7 +36,7 @@ disable_service() {
 # ── Package Lists ────────────────────────────────────────
 
 BUILD_DEPS=(
-    base-devel libx11 libxft libxinerama imlib2
+    base-devel libx11 libxft libxinerama libxrender imlib2
     libxcb xcb-util freetype2 fontconfig
 )
 
@@ -46,7 +46,7 @@ XORG_PKGS=(
 
 RUNTIME_DEPS=(
     rofi picom dunst feh flameshot dex mate-polkit elogind alsa-utils
-    git unzip xclip xorg-xprop thunar gvfs tumbler
+    git unzip xclip xorg-xprop thunar gvfs tumbler dbus
     thunar-archive-plugin nwg-look xdg-user-dirs
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pipewire-alsa pavucontrol gnome-keyring
     networkmanager network-manager-applet libnotify rsync
@@ -56,8 +56,6 @@ THEME_DEPS=(dconf qt6ct qt5ct)
 FONT_PKGS=(noto-fonts-emoji ttf-meslo-nerd)
 TERMINAL_PKG=alacritty
 BAR_PKG=polybar
-DM_PKG=lemurs
-DM_SERVICE=lemurs
 
 # ── Distro-Specific Helpers ──────────────────────────────
 

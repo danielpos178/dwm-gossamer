@@ -65,11 +65,9 @@ if command -v pipewire &>/dev/null; then
             warn "Running as root — enable PipeWire user services manually for your user."
         fi
     else
-        # runit (Void Linux): enable system-level PipeWire services if available
-        for svc in pipewire wireplumber pipewire-pulse; do
-            enable_service "$svc" 2>/dev/null || true
-        done
-        ok "PipeWire runit services enabled."
+        # runit (Void Linux): PipeWire has no system-level runit services.
+        # It is started as the current user by autostart.sh on each login.
+        ok "PipeWire installed — will be started by autostart.sh on login."
     fi
 else
     warn "PipeWire not found — audio may not work."
@@ -150,49 +148,17 @@ else
 fi
 
 # ── Essential system services (runit/Void Linux) ──────────
-# Must run BEFORE display manager — lemurs needs dbus + seatd active
+# Enables dbus, elogind, and NetworkManager. On runit, elogind provides
+# session/seat management, XDG_RUNTIME_DIR, and power event handling.
 if ! command -v systemctl &>/dev/null; then
     enable_essential_services
 fi
 
-# ── Display manager (lemurs) ─────────────────────────────
-currentdm=""
-for dm in lemurs lightdm sddm gdm; do command -v "$dm" &>/dev/null && { currentdm="$dm"; break; }; done
-
-if [ -n "$currentdm" ]; then
-    ok "Display manager already installed: $currentdm"
-else
-    info "Installing lemurs display manager..."
-    install_packages "$DM_PKG" 2>&1 \
-        && ok "lemurs installed." \
-        || warn "lemurs not found — install manually: pacman -S lemurs / xbps-install -S lemurs"
-fi
-
-# ── Lemurs config ────────────────────────────────────────
-if command -v lemurs &>/dev/null || [ -d /etc/lemurs ]; then
-    info "Deploying lemurs config..."
-    sudo make -C "$REPO_DIR/lemurs" install
-
-    # Patch power commands based on init system
-    if [ -d /run/systemd/system ]; then
-        ok "Power controls: systemctl."
-    else
-        # runit (Void Linux) — patch to direct power commands
-        sudo sed -i 's|cmd = "systemctl poweroff -l"|cmd = "poweroff"|'    /etc/lemurs/config.toml
-        sudo sed -i 's|cmd = "systemctl reboot -l"|cmd = "reboot"|'        /etc/lemurs/config.toml
-        sudo sed -i 's|cmd = "systemctl suspend"|cmd = "zzz"|'             /etc/lemurs/config.toml
-        ok "Power controls: direct commands (runit)."
-    fi
-
-    # Install and enable service (runit or systemd)
-    if ! command -v systemctl &>/dev/null; then
-        sudo make -C "$REPO_DIR/lemurs" install-runit
-        enable_dm_service "$DM_SERVICE"
-    else
-        sudo systemctl enable lemurs.service 2>/dev/null \
-            && ok "lemurs systemd service enabled." \
-            || warn "Could not enable lemurs.service."
-    fi
+# ── Enable elogind (systemd only — runit handled above) ──
+if command -v systemctl &>/dev/null; then
+    sudo systemctl enable --now elogind.service 2>/dev/null \
+        && ok "elogind seat/session management enabled." \
+        || warn "elogind not found — seat management may rely on systemd-logind."
 fi
 
 # ── Build & Install ──────────────────────────────────────
@@ -223,7 +189,7 @@ echo "╚═══════════════════════�
 echo ""
 info "Detected: $DISTRO_NAME"
 echo "  • Edit config.h to customize, then: make && sudo make install"
-echo "  • Log out and select 'dwm', or start with: startx"
+echo "  • Start dwm manually with: startx"
 echo ""
 echo "  SUPER+/   keybind viewer     SUPER+X  terminal"
 echo "  SUPER+F1  control center     SUPER+R  app launcher (rofi)"

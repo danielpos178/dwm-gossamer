@@ -34,11 +34,7 @@ install: all
 	@echo "==> Installing dwm binary and man page..."
 	install -Dm755 dwm ${DESTDIR}${PREFIX}/bin/dwm
 	sed "s/VERSION/${VERSION}/g" dwm.1 | install -Dm644 /dev/stdin ${DESTDIR}${MANPREFIX}/man1/dwm.1
-	@echo "==> Setting up X session entries..."
-	if [ ! -d /usr/share/xsessions ]; then \
-		mkdir -p /usr/share/xsessions; \
-	fi
-	install -Dm644 dwm.desktop /usr/share/xsessions/
+	@echo "==> Installing .xinitrc for startx..."
 	install -Dm644 scripts/.xinitrc ${USER_HOME}/.xinitrc
 	@echo "==> Syncing local repo to data dir..."
 	mkdir -p ${DATA_DIR}
@@ -106,18 +102,17 @@ install: all
 	chown -R ${OWNER}: ${DATA_DIR} && chown ${OWNER}: ${USER_HOME}/.xinitrc 2>/dev/null || true
 	@echo ""
 	@echo "  dwm installed successfully."
-	@echo "  Log out and select 'dwm', or start with: startx"
+	@echo "  Log out and start dwm with: startx"
 	@echo ""
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/dwm \
-		${DESTDIR}${MANPREFIX}/man1/dwm.1 \
-		/usr/share/xsessions/dwm.desktop
+		${DESTDIR}${MANPREFIX}/man1/dwm.1
 
 release: dwm
 	mkdir -p release
-	cp -f dwm dwm.desktop .xinitrc release/
+	cp -f dwm .xinitrc release/
 	cp -rf config scripts release/
-	tar -czf release/Omitus-${VERSION}.tar.gz -C release dwm dwm.desktop .xinitrc config scripts
+	tar -czf release/Omitus-${VERSION}.tar.gz -C release dwm .xinitrc config scripts
 
 .PHONY: all clean install uninstall release

@@ -1,13 +1,13 @@
 #!/bin/bash
-# .xinitrc — only used when starting dwm via startx (not SDDM)
-# All setup (DPMS, dbus env, services) is handled by autostart.sh
+# .xinitrc — invoked by startx to launch dwm
+# elogind provides XDG_RUNTIME_DIR and XDG_SESSION_TYPE on login;
+# the fallbacks below handle edge cases (autologin, direct TTY startx).
 
 # Source user profile so PATH includes ~/.local/bin, /usr/local/bin, etc.
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
 
-# Required for terminal emulators (alacritty, kitty, ghostty) on Void Linux / seatd.
-# Without these, they cannot access /dev/tty and silently fail to open.
+# Ensure X session variables are set (elogind provides these on normal TTY login)
 export XDG_SESSION_TYPE=x11
 [ -z "$XDG_RUNTIME_DIR" ] && export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 

@@ -182,11 +182,6 @@ echo ""
 
 # ── Session entry ───────────────────────────────────────
 echo "Session Setup:"
-if [ -f /usr/share/xsessions/dwm.desktop ]; then
-    printf "  ${GREEN}✓${NC} dwm.desktop in /usr/share/xsessions/\n"
-else
-    printf "  ${YELLOW}○${NC} dwm.desktop not found (run 'sudo make install')\n"
-fi
 if [ -f "$HOME/.xinitrc" ]; then
     printf "  ${GREEN}✓${NC} ~/.xinitrc exists\n"
 else
