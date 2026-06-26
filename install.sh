@@ -104,8 +104,11 @@ ok "Fonts installed."
 
 # ── Keyboard Layouts ────────────────────────────────────
 info "Configuring keyboard layouts..."
-KBLAYOUT_CONF="$HOME/.config/dwm-titus/kblayout.conf"
-mkdir -p "$HOME/.config/dwm-titus"
+TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(eval echo "~$TARGET_USER")
+KBLAYOUT_CONF="$TARGET_HOME/.config/dwm-titus/kblayout.conf"
+mkdir -p "$TARGET_HOME/.config/dwm-titus"
+chown "$TARGET_USER:$(id -gn "$TARGET_USER")" "$TARGET_HOME/.config/dwm-titus" 2>/dev/null || true
 
 # Common keyboard layouts (X11 layout codes)
 LAYOUT_OPTIONS=(
@@ -195,16 +198,18 @@ done
 # Create config file
 LAYOUT_STRING="${UNIQUE_LAYOUTS[*]}"
 cat > "$KBLAYOUT_CONF" <<EOF
+# Keyboard layouts for SUPER+SPACE cycling
 
 LAYOUTS="$LAYOUT_STRING"
 DEFAULT_LAYOUT="${UNIQUE_LAYOUTS[0]}"
 EOF
+chown "$TARGET_USER:$(id -gn "$TARGET_USER")" "$KBLAYOUT_CONF" 2>/dev/null || true
 
 ok "Keyboard layouts configured: $LAYOUT_STRING"
 
-# Apply default layout now
+# Apply default layout now (as the target user, not root)
 if command -v setxkbmap &>/dev/null; then
-    setxkbmap -layout "${UNIQUE_LAYOUTS[0]}" 2>/dev/null \
+    sudo -u "$TARGET_USER" setxkbmap -layout "${UNIQUE_LAYOUTS[0]}" 2>/dev/null \
         && ok "Default layout set: ${UNIQUE_LAYOUTS[0]}" \
         || warn "Could not set layout (X not running?). Layout will apply on next login."
 fi
