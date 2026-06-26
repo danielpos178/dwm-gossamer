@@ -513,7 +513,8 @@ arrange(Monitor *m)
 void
 arrangemon(Monitor *m)
 {
-	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol - 1);
+	m->ltsymbol[sizeof(m->ltsymbol) - 1] = '\0';
 	if (m->lt[m->sellt]->arrange)
 		m->lt[m->sellt]->arrange(m);
 }
@@ -862,7 +863,8 @@ createmon(void)
 	m->bh = bh;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
-	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol - 1);
+	m->ltsymbol[sizeof(m->ltsymbol) - 1] = '\0';
 	m->pertag = ecalloc(1, sizeof(Pertag));
 	m->pertag->curtag = m->pertag->prevtag = 1;
 
@@ -940,69 +942,9 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
+	/* Built-in bar drawing is disabled — polybar provides the bar.
+	 * This function is intentionally left empty. */
 	return;
-
-	int x, w, tw = 0;
-	int boxs = drw->fonts->h / 9;
-	int boxw = drw->fonts->h / 6 + 2;
-	unsigned int i, occ = 0, urg = 0;
-	Client *c;
-
-	if (!m->showbar)
-		return;
-
-	if (m == selmon) {
-		drw_setscheme(drw, scheme[SchemeNorm]);
-		tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
-		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
-	}
-
-	x = 0;
-	if (m->ltsymbol[0] != '\0' && strcmp(m->ltsymbol, "") != 0) {
-		w = TEXTW(m->ltsymbol);
-		drw_setscheme(drw, scheme[SchemeNorm]);
-		x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
-	}
-
-	for (c = m->clients; c; c = c->next) {
-		occ |= c->tags == TAGMASK ? 0 : c->tags;
-		if (c->isurgent)
-			urg |= c->tags;
-	}
-
-	updatemonitorcount();
-	unsigned int montags = getmontagmask(m->num);
-
-	x = 0;
-	for (i = 0; i < LENGTH(tags); i++) {
-		if (!(montags & (1 << i)))
-			continue;
-		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
-			continue;
-		w = TEXTW(tags[i]);
-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
-		x += w;
-	}
-
-	if ((w = m->ww - tw - x) > bh) {
-		if (m->sel) {
-			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
-			#if SHOWWINICON
-			drw_text(drw, x, 0, w, bh, lrpad / 2 + (m->sel->icon ? m->sel->icw + ICONSPACING : 0), m->sel->name, 0);
-			if (m->sel->icon) drw_pic(drw, x + lrpad / 2, (bh - m->sel->ich) / 2, m->sel->icw, m->sel->ich, m->sel->icon);
-			#else
-			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
-			#endif
-			if (m->sel->isfloating)
-				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
-		} else {
-			drw_setscheme(drw, scheme[SchemeNorm]);
-			drw_rect(drw, x, 0, w, bh, 1, 1);
-		}
-	}
-
-	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
 void
@@ -2199,6 +2141,7 @@ runautostart(void)
 	if (sprintf(path, "%s/%s", pathpfx, autostartsh) <= 0) {
 		free(path);
 		free(pathpfx);
+		return;
 	}
 
 	if (access(path, X_OK) == 0) {
@@ -2477,7 +2420,8 @@ setlayout(const Arg *arg)
 		selmon->pertag->ltidxs[selmon->pertag->curtag][selmon->sellt] = (Layout *)arg->v;
 	selmon->lt[selmon->sellt] = selmon->pertag->ltidxs[selmon->pertag->curtag][selmon->sellt];
 
-	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol - 1);
+	selmon->ltsymbol[sizeof(selmon->ltsymbol) - 1] = '\0';
 	if (selmon->sel)
 		arrange(selmon);
 	else
@@ -3077,6 +3021,7 @@ setup_inotify(void)
 	inotify_fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
 	if (inotify_fd < 0) { perror("dwm: inotify_init1"); return; }
 
+	mkdir(toml_config_dir, 0755);
 	inotify_wd = inotify_add_watch(inotify_fd, toml_config_dir,
 	                               IN_CLOSE_WRITE | IN_MOVED_TO);
 	if (inotify_wd < 0) {
@@ -3084,6 +3029,7 @@ setup_inotify(void)
 	}
 
 	/* Watch the default dir so updates there also trigger hot-reload */
+	mkdir(toml_default_dir, 0755);
 	inotify_wd3 = inotify_add_watch(inotify_fd, toml_default_dir,
 	                                IN_CLOSE_WRITE | IN_MOVED_TO);
 
@@ -3308,13 +3254,32 @@ extern char **environ;
 void
 spawn(const Arg *arg)
 {
+	if (!arg || !arg->v || !((char **)arg->v)[0])
+		return;
 	posix_spawnp(NULL, ((char **)arg->v)[0], NULL, NULL, (char **)arg->v, environ);
 }
 
 void
 spawnbar()
 {
-	system("$HOME/.config/polybar/launch.sh");
+	const char *launch = "/bin/sh";
+	const char *script = ".config/polybar/launch.sh";
+	const char *home = getenv("HOME");
+	if (!home)
+		return;
+
+	char path[PATH_MAX];
+	snprintf(path, sizeof(path), "%s/%s", home, script);
+
+	if (access(path, X_OK) != 0)
+		return;
+
+	pid_t pid = fork();
+	if (pid == 0) {
+		setsid();
+		execl(launch, launch, path, (char *)NULL);
+		_exit(127);
+	}
 }
 
 void
@@ -3724,25 +3689,9 @@ unswallow(Client *c)
 void
 updatebars(void)
 {
+	/* Built-in bar window creation is disabled — polybar provides the bar.
+	 * This function is intentionally left empty. */
 	return;
-
-	Monitor *m;
-	XSetWindowAttributes wa = {
-		.override_redirect = True,
-		.background_pixmap = ParentRelative,
-		.event_mask = ButtonPressMask|ExposureMask
-	};
-	XClassHint ch = {"dwm", "dwm"};
-	for (m = mons; m; m = m->next) {
-		if (m->barwin)
-			continue;
-		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, m->ww, bh, 0, DefaultDepth(dpy, screen),
-				CopyFromParent, DefaultVisual(dpy, screen),
-				CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
-		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
-		XMapRaised(dpy, m->barwin);
-		XSetClassHint(dpy, m->barwin, &ch);
-	}
 }
 
 void
@@ -4281,7 +4230,7 @@ getmonlogicalindex(Monitor *target)
 		return 0;
 	
 	for (m = mons; m; m = m->next) {
-		if (m->my >= 1080) {
+		if (m->mx == 0 && m->my == 0) {
 			primary = m;
 			break;
 		}

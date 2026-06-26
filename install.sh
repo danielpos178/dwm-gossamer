@@ -42,10 +42,14 @@ ok "Build dependencies installed."
 
 # ── Runtime dependencies ─────────────────────────────────
 info "Installing runtime dependencies..."
-for pkg in "${RUNTIME_DEPS[@]}"; do
-    install_packages "$pkg" 2>/dev/null \
-        || warn "Package '$pkg' not found — skipping."
-done
+# Try batch install first (fast), then fall back to per-package if some are missing
+if ! install_packages "${RUNTIME_DEPS[@]}" 2>/dev/null; then
+    warn "Some packages may not exist — trying individually..."
+    for pkg in "${RUNTIME_DEPS[@]}"; do
+        install_packages "$pkg" 2>/dev/null \
+            || warn "Package '$pkg' not found — skipping."
+    done
+fi
 ok "Runtime dependencies installed."
 
 # ── PipeWire audio ────────────────────────────────────────

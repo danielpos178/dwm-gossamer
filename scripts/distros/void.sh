@@ -3,7 +3,7 @@
 
 DISTRO_NAME="Void Linux"
 
-PKG_CMD="sudo xbps-install -Sy"
+PKG_CMD="sudo xbps-install --yes"
 
 setup_pkg_manager() {
     sudo xbps-install -Sy >/dev/null 2>&1
@@ -17,7 +17,7 @@ setup_pkg_manager() {
 }
 
 install_packages() {
-    sudo xbps-install -Sy --yes "$@" >/dev/null
+    sudo xbps-install --yes "$@" >/dev/null
 }
 
 enable_service() {
@@ -62,8 +62,8 @@ XORG_PKGS=(
 # elogind provides session/seat management, XDG_RUNTIME_DIR, and power event handling
 RUNTIME_DEPS=(
     rofi picom dunst feh flameshot dex mate-polkit polkit elogind alsa-utils dbus
-    mesa-dri mesa-gl mesa-egl git unzip xclip xprop Thunar gvfs tumbler arandr
-    thunar-archive-plugin nwg-look xdg-user-dirs xorg-xkb-utils
+    mesa-dri mesa-gl mesa-egl git unzip xclip xprop     Thunar gvfs tumbler arandr
+    Thunar-archive-plugin nwg-look xdg-user-dirs xorg-xkb-utils
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring
     NetworkManager network-manager-applet libnotify rsync
 )
@@ -75,7 +75,7 @@ FONT_PKGS=(
     noto-fonts-emoji           # Emoji support
     dejavu-fonts-ttf           # DejaVu: common baseline font family
     liberation-fonts-ttf       # Liberation: metric-compatible with MS fonts
-    font-awesome               # Font Awesome icons (polybar/dwm)
+    font-awesome6              # Font Awesome 6 icons (polybar/dwm)
     nerd-fonts-ttf             # Nerd Fonts: icons for terminal/polybar
 )
 TERMINAL_PKG=alacritty

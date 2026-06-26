@@ -39,7 +39,8 @@ install: all
 	@echo "==> Syncing local repo to data dir..."
 	mkdir -p ${DATA_DIR}
 	if [ "$$(realpath .)" != "$$(realpath ${DATA_DIR})" ]; then \
-		cp -rf . ${DATA_DIR}/; \
+		rsync -a --exclude='.git' --exclude='*.o' --exclude='dwm' --exclude='release' \
+			--exclude='.github' --exclude='docs' . ${DATA_DIR}/; \
 	fi
 	@echo "==> Installing config directories..."
 	for dir in config/*/; do \
@@ -113,6 +114,6 @@ release: dwm
 	mkdir -p release
 	cp -f dwm .xinitrc release/
 	cp -rf config scripts release/
-	tar -czf release/Omitus-${VERSION}.tar.gz -C release dwm .xinitrc config scripts
+	tar -czf release/dwm-gossamer-${VERSION}.tar.gz -C release dwm .xinitrc config scripts
 
 .PHONY: all clean install uninstall release

@@ -39,7 +39,7 @@ check_pkg_pacman() {
 }
 
 check_pkg_xbps() {
-    if xbps-query -l 2>/dev/null | command grep -q "^ii $1 "; then
+    if xbps-query "$1" >/dev/null 2>&1; then
         printf "  ${GREEN}✓${NC} %s\n" "$1"
     else
         printf "  ${RED}✗${NC} %s ${YELLOW}(not installed)${NC}\n" "$1"
