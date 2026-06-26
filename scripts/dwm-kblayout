@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+# dwm-kblayout — keyboard layout manager for dwm
+#
+# Usage: dwm-kblayout {next|prev|set <layout>|get|list}
+#
+# Cycles through configured keyboard layouts using setxkbmap.
+# Configuration: ~/.config/dwm-titus/kblayout.conf
+#
+# Unix philosophy: one tool, one job, done well.
+# Dependencies: setxkbmap (xorg-xkb-utils)
+
+set -euo pipefail
+
+# ── Constants ─────────────────────────────────────────────────────────────────
+
+readonly PROG="${0##*/}"
+readonly CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dwm-titus"
+readonly CONF_FILE="$CONF_DIR/kblayout.conf"
+readonly VERSION="1.0.0"
+
+# Defaults (overridden by config file)
+LAYOUTS="us"
+DEFAULT_LAYOUT="us"
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+die() { printf '%s: %s\n' "$PROG" "$*" >&2; exit 1; }
+
+usage() {
+    cat <<EOF
+$PROG $VERSION — keyboard layout manager
+
+Usage:
+  $PROG next           Cycle to next layout
+  $PROG prev           Cycle to previous layout
+  $PROG set <layout>   Switch to specific layout
+  $PROG get            Print current layout
+  $PROG list           List configured layouts
+  $PROG help           Show this help
+
+Configuration:
+  $CONF_FILE
+
+  LAYOUTS="us ro"      Space-separated layout list
+  DEFAULT_LAYOUT="us"  Layout to use on init
+
+Examples:
+  $PROG next
+  $PROG set ro
+  $PROG list
+EOF
+}
+
+# Load configuration
+load_config() {
+    if [[ -f "$CONF_FILE" ]]; then
+        # shellcheck source=/dev/null
+        source "$CONF_FILE"
+    fi
+    # Validate: ensure at least one layout
+    if [[ -z "${LAYOUTS:-}" ]]; then
+        die "no layouts configured in $CONF_FILE"
+    fi
+}
+
+# Get current X11 keyboard layout
+get_current() {
+    setxkbmap -query 2>/dev/null | awk '/^layout:/{print $2; exit}'
+}
+
+# Count words in string
+word_count() {
+    echo "$1" | wc -w
+}
+
+# Get word at position (1-indexed)
+word_at() {
+    echo "$1" | awk -v n="$2" '{print $n}'
+}
+
+# Find index of word in string (1-indexed, 0 if not found)
+word_index() {
+    local haystack="$1" needle="$2" i=1
+    for word in $haystack; do
+        [[ "$word" == "$needle" ]] && echo "$i" && return
+        i=$((i + 1))
+    done
+    echo 0
+}
+
+# Set keyboard layout
+apply_layout() {
+    local layout="$1"
+    setxkbmap -layout "$layout" 2>/dev/null || die "failed to set layout '$layout'"
+    signal_polybar
+}
+
+# Signal polybar to refresh (SIGUSR1 on first polybar process)
+signal_polybar() {
+    local pid
+    pid=$(pgrep -x polybar 2>/dev/null | head -1) || return 0
+    kill -USR1 "$pid" 2>/dev/null || true
+}
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_next() {
+    local current count idx next_idx next_layout
+    current=$(get_current) || die "cannot read current layout"
+    count=$(word_count "$LAYOUTS")
+    idx=$(word_index "$LAYOUTS" "$current")
+
+    # Default to first if current not in list
+    [[ "$idx" -eq 0 ]] && idx=1
+
+    next_idx=$(( (idx % count) + 1 ))
+    next_layout=$(word_at "$LAYOUTS" "$next_idx")
+
+    apply_layout "$next_layout"
+    printf '%s\n' "$next_layout"
+}
+
+cmd_prev() {
+    local current count idx prev_idx prev_layout
+    current=$(get_current) || die "cannot read current layout"
+    count=$(word_count "$LAYOUTS")
+    idx=$(word_index "$LAYOUTS" "$current")
+
+    # Default to first if current not in list
+    [[ "$idx" -eq 0 ]] && idx=1
+
+    prev_idx=$(( ((idx - 2 + count) % count) + 1 ))
+    prev_layout=$(word_at "$LAYOUTS" "$prev_idx")
+
+    apply_layout "$prev_layout"
+    printf '%s\n' "$prev_layout"
+}
+
+cmd_set() {
+    local target="${1:-}"
+    [[ -z "$target" ]] && die "set: missing layout argument"
+
+    # Verify layout exists in config
+    local found=0
+    for layout in $LAYOUTS; do
+        [[ "$layout" == "$target" ]] && found=1 && break
+    done
+    [[ "$found" -eq 0 ]] && die "layout '$target' not in configured list: $LAYOUTS"
+
+    apply_layout "$target"
+    printf '%s\n' "$target"
+}
+
+cmd_get() {
+    get_current || die "cannot read current layout"
+}
+
+cmd_list() {
+    local current idx i=1
+    current=$(get_current) || true
+
+    for layout in $LAYOUTS; do
+        if [[ "$layout" == "$current" ]]; then
+            printf '%s *\n' "$layout"
+        else
+            printf '%s\n' "$layout"
+        fi
+        i=$((i + 1))
+    done
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+main() {
+    local cmd="${1:-help}"
+    shift || true
+
+    load_config
+
+    case "$cmd" in
+        next)  cmd_next  ;;
+        prev)  cmd_prev  ;;
+        set)   cmd_set "$@" ;;
+        get)   cmd_get   ;;
+        list)  cmd_list  ;;
+        help)  usage     ;;
+        -h|--help) usage ;;
+        -v|--version) printf '%s %s\n' "$PROG" "$VERSION" ;;
+        *) die "unknown command: $cmd (see '$PROG help')" ;;
+    esac
+}
+
+main "$@"
