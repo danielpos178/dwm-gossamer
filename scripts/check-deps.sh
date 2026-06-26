@@ -160,6 +160,8 @@ echo ""
 echo "Optional (recommended):"
 check_cmd "polybar"
 check_cmd "xdg-open"
+check_cmd "clipmenud"
+check_cmd "clipmenu"
 echo ""
 
 echo "Fonts:"

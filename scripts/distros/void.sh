@@ -62,10 +62,11 @@ XORG_PKGS=(
 # elogind provides session/seat management, XDG_RUNTIME_DIR, and power event handling
 RUNTIME_DEPS=(
     rofi picom dunst feh flameshot dex mate-polkit polkit elogind alsa-utils dbus
-    mesa-dri mesa-gl mesa-egl git unzip xclip xprop     Thunar gvfs tumbler arandr
-    Thunar-archive-plugin nwg-look xdg-user-dirs xorg-xkb-utils
+    mesa-dri mesa git unzip xclip xprop Thunar gvfs tumbler arandr
+    thunar-archive-plugin nwg-look xdg-user-dirs xkbutils
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pavucontrol gnome-keyring
     NetworkManager network-manager-applet libnotify rsync
+    clipmenu clipnotify xsel
 )
 
 THEME_DEPS=(dconf qt6ct qt5ct)

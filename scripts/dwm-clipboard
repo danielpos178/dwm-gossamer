@@ -1,0 +1,97 @@
+#!/bin/bash
+# ─────────────────────────────────────────────────────────
+# dwm-clipboard — clipboard history picker (rofi + clipmenu)
+# Reads the active dwm theme from themes.toml so rofi
+# always matches the rest of the desktop.
+#
+# Usage:
+#   dwm-clipboard          open clipboard history
+#   dwm-clipboard clear    clear entire clipboard history
+# ─────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# ── Theme loader ──────────────────────────────────────────
+THEMES_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dwm-titus/themes.toml"
+
+# Defaults — gruvbox-hard (matches the project's active theme)
+BG="#282828"
+FG="#EBDBB2"
+BGSEL="#3C3836"
+ACCENT="#FABD2F"
+GREY="#928374"
+
+toml_get() {
+    local section="$1" key="$2" file="$3"
+    awk -v sec="[$section]" -v key="$key" '
+        /^\[/ { in_sec = ($0 == sec) }
+        in_sec && $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {
+            sub(/^[^=]*=[[:space:]]*/, "")
+            gsub(/"/, "")
+            gsub(/[[:space:]]+#.*$/, "")
+            sub(/[[:space:]]+$/, "")
+            print; exit
+        }
+    ' "$file"
+}
+
+load_theme() {
+    [[ -f "$THEMES_FILE" ]] || return 1
+
+    local name sec
+    name="$(toml_get "active" "theme" "$THEMES_FILE")"
+    [[ -n "$name" ]] || return 1
+
+    sec="theme.$name"
+    t() { toml_get "$sec" "$1" "$THEMES_FILE"; }
+
+    local v
+    v="$(t term_bg)"       && BG="$v"
+    v="$(t term_fg)"       && FG="$v"
+    v="$(t normbgcolor)"   && BGSEL="$v"
+    v="$(t selbordercolor)" && ACCENT="$v"
+    v="$(t normfgcolor)"   && GREY="$v"
+}
+
+load_theme 2>/dev/null || true  # fall back to defaults
+
+# ── Handle clear subcommand ───────────────────────────────
+case "${1:-}" in
+    clear|--clear|-c)
+        if command -v clipdel &>/dev/null; then
+            clipdel --all
+            echo "Clipboard history cleared."
+        else
+            echo "clipdel not found — install clipmenu." >&2
+            exit 1
+        fi
+        exit 0
+        ;;
+esac
+
+# ── Ensure clipmenud is running ───────────────────────────
+if ! pgrep -x clipmenud &>/dev/null; then
+    if command -v clipmenud &>/dev/null; then
+        clipmenud &
+        sleep 0.2
+    else
+        echo "clipmenud not found — install clipmenu." >&2
+        exit 1
+    fi
+fi
+
+# ── Launch clipmenu through rofi ──────────────────────────
+exec clipmenu -i \
+    -p " Clipboard" \
+    -theme-str "window {background-color: ${BG}; border: 0;}" \
+    -theme-str "mainbox {background-color: ${BG}; spacing: 0;}" \
+    -theme-str "inputbar {background-color: ${BGSEL}; padding: 8px 12px;}" \
+    -theme-str "prompt {text-color: ${ACCENT};}" \
+    -theme-str "entry {text-color: ${FG}; placeholder-color: ${GREY};}" \
+    -theme-str "listview {background-color: ${BG}; lines: 10;}" \
+    -theme-str "element {padding: 8px 12px; text-color: ${FG};}" \
+    -theme-str "element selected {background-color: ${BGSEL}; text-color: ${ACCENT};}" \
+    -theme-str "element-text {background-color: inherit; text-color: inherit;}" \
+    -font "MesloLGS NF 14" \
+    -show-icons \
+    -width 30

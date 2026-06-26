@@ -79,6 +79,10 @@ keys = [
   { mod="SUPER SHIFT",      key="p",       desc="Screenshot area → file",  func="spawn",       cmd="dwm-screenshot gui" },
   { mod="SUPER CTRL",       key="p",       desc="Screenshot area → clip",  func="spawn",       cmd="dwm-screenshot clip" },
 
+  # ── Clipboard ──────────────────────────────────────────────────────────────────
+  { mod="SUPER",            key="c",       desc="Clipboard history",         func="spawn",       cmd="dwm-clipboard" },
+  { mod="SUPER SHIFT",      key="c",       desc="Clear clipboard history",   func="spawn",       cmd="dwm-clipboard clear" },
+
   # ── Files & utilities ─────────────────────────────────────────────────────────
   { mod="SUPER",            key="e",       desc="File manager",            func="spawn",       cmd="xdg-open ." },
   { mod="SUPER",            key="slash",   desc="Keybinds cheatsheet",     func="spawn",       cmd="dwm-keybinds" },

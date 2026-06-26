@@ -28,6 +28,11 @@ feh --randomize --bg-fill ~/Pictures/backgrounds/* 2>/dev/null &
 picom -b 2>/dev/null &
 dunst 2>/dev/null &
 
+# Clipboard manager daemon (passive X11 selection monitor)
+if command -v clipmenud &>/dev/null; then
+    clipmenud &
+fi
+
 # PipeWire audio (needed on non-systemd systems; harmless on systemd if already running)
 if command -v pipewire &>/dev/null && ! pgrep -x pipewire &>/dev/null; then
     pipewire 2>/dev/null &
