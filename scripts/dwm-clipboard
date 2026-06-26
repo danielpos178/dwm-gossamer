@@ -70,26 +70,16 @@ case "${1:-}" in
 esac
 
 # ── Ensure clipmenud is running ───────────────────────────
-if ! pgrep -x clipmenud &>/dev/null; then
+# clipmenud is a bash script — pgrep -x won't match it because
+# the process name is "bash", not "clipmenud". Use -f instead.
+if ! pgrep -f '[c]lipmenud' &>/dev/null; then
     if command -v clipmenud &>/dev/null; then
         clipmenud &
-        # Wait for cache file (clipmenud creates it on startup)
-        i=0
-        while [ ! -f "$(clipctl cache-dir 2>/dev/null)/line_cache" ] && [ "$i" -lt 30 ]; do
-            sleep 0.1
-            i=$((i + 1))
-        done
+        sleep 0.3
     else
         echo "clipmenud not found — install clipmenu." >&2
         exit 1
     fi
-fi
-
-# ── Bail if clipboard is empty ────────────────────────────
-CACHE_DIR="$(clipctl cache-dir 2>/dev/null || true)"
-if [ -z "$CACHE_DIR" ] || [ ! -f "${CACHE_DIR}/line_cache" ]; then
-    echo "Clipboard is empty — copy something first." >&2
-    exit 1
 fi
 
 # ── Write a temporary rofi theme ──────────────────────────
