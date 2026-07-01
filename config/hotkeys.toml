@@ -65,7 +65,6 @@ keys = [
   { mod="SUPER",            key="r",       desc="App launcher",            func="spawn",       exec=["vicinae", "toggle"] },
   { mod="SUPER",            key="x",       desc="Terminal",                func="spawn",       exec=["$terminal"] },
   { mod="SUPER SHIFT",      key="space",   desc="Switch keyboard layout",  func="spawn",       cmd="dwm-kblayout next" },
-  { mod="SUPER",            key="w",       desc="Looking Glass (VM)",      func="spawn",       cmd="looking-glass-client -F" },
   { mod="SUPER SHIFT",      key="w",       desc="Randomize wallpaper",     func="spawn",       cmd="feh --randomize --bg-fill ~/Pictures/backgrounds/*" },
 
   # ── Web apps ─────────────────────────────────────────────────────────────────
@@ -135,8 +134,8 @@ keys = [
   { mod="SUPER",            key="0",       desc="Show all tags",           func="view",        ui=-1 },
   { mod="SUPER SHIFT",      key="q",       desc="Quit dwm",                func="quit" },
   { mod="SUPER CTRL",       key="q",       desc="Power menu",              func="spawn",       cmd="$HOME/.config/rofi/powermenu.sh" },
-  { mod="SUPER CTRL SHIFT", key="r",       desc="Reboot",                  func="spawn",       cmd="systemctl reboot" },
-  { mod="SUPER CTRL SHIFT", key="s",       desc="Suspend",                 func="spawn",       cmd="systemctl suspend" },
+  { mod="SUPER CTRL SHIFT", key="r",       desc="Reboot",                  func="spawn",       cmd="sudo reboot" },
+  { mod="SUPER CTRL SHIFT", key="s",       desc="Suspend",                 func="spawn",       cmd="sudo poweroff" },
 
 ]
 
