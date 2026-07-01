@@ -286,6 +286,22 @@ if [ "$TARGET_USER" != "root" ]; then
     else
         warn "theme-apply.sh not found — run it manually to apply GTK/Qt theme."
     fi
+
+    # Configure .xprofile for the non-root user
+    USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+    if [ -n "$USER_HOME" ]; then
+        XPROFILE="$USER_HOME/.xprofile"
+        THEME_ENV_LINE='[ -f "$HOME/.config/dwm-titus/theme-env.sh" ] && . "$HOME/.config/dwm-titus/theme-env.sh"'
+        if [ -f "$XPROFILE" ]; then
+            if ! grep -q "dwm-titus/theme-env.sh" "$XPROFILE"; then
+                printf '\n# Source theme environment\n%s\n' "$THEME_ENV_LINE" >> "$XPROFILE"
+            fi
+        else
+            printf '# Source theme environment\n%s\n' "$THEME_ENV_LINE" > "$XPROFILE"
+        fi
+        chown "$TARGET_USER": "$XPROFILE" 2>/dev/null || true
+        ok ".xprofile configured for $TARGET_USER."
+    fi
 else
     warn "Running as root — run theme-apply.sh as your user to apply GTK/Qt theme."
 fi

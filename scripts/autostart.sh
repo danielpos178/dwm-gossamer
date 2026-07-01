@@ -20,9 +20,17 @@ if command -v dbus-update-activation-environment >/dev/null 2>&1; then
 fi
 wait
 
-# Source theme environment so tray apps inherit QT_QPA_PLATFORMTHEME
+# Source theme environment so tray apps inherit QT_QPA_PLATFORMTHEME and GTK_THEME
 THEME_ENV="${XDG_CONFIG_HOME:-$HOME/.config}/dwm-titus/theme-env.sh"
-[ -f "$THEME_ENV" ] && . "$THEME_ENV"
+if [ -f "$THEME_ENV" ]; then
+    . "$THEME_ENV"
+    if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+        dbus-update-activation-environment QT_QPA_PLATFORMTHEME GTK_THEME 2>/dev/null || true
+    fi
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user import-environment QT_QPA_PLATFORMTHEME GTK_THEME 2>/dev/null || true
+    fi
+fi
 
 feh --randomize --bg-fill ~/Pictures/backgrounds/* 2>/dev/null &
 picom -b 2>/dev/null &

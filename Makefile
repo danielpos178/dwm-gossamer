@@ -36,6 +36,14 @@ install: all
 	sed "s/VERSION/${VERSION}/g" dwm.1 | install -Dm644 /dev/stdin ${DESTDIR}${MANPREFIX}/man1/dwm.1
 	@echo "==> Installing .xinitrc for startx..."
 	install -Dm644 scripts/.xinitrc ${USER_HOME}/.xinitrc
+	@echo "==> Configuring .xprofile for display managers..."
+	if [ -f ${USER_HOME}/.xprofile ]; then \
+		if ! grep -q "dwm-titus/theme-env.sh" ${USER_HOME}/.xprofile; then \
+			printf '\n# Source theme environment\n[ -f "$$HOME/.config/dwm-titus/theme-env.sh" ] && . "$$HOME/.config/dwm-titus/theme-env.sh"\n' >> ${USER_HOME}/.xprofile; \
+		fi; \
+	else \
+		printf '# Source theme environment\n[ -f "$$HOME/.config/dwm-titus/theme-env.sh" ] && . "$$HOME/.config/dwm-titus/theme-env.sh"\n' > ${USER_HOME}/.xprofile; \
+	fi
 	@echo "==> Syncing local repo to data dir..."
 	mkdir -p ${DATA_DIR}
 	if [ "$$(realpath .)" != "$$(realpath ${DATA_DIR})" ]; then \
@@ -100,7 +108,7 @@ install: all
 		chown -R ${OWNER}: "${CFG_DIR}/$$b"; \
 	done
 	chown -R ${OWNER}: ${CFG_DIR}/fontconfig 2>/dev/null || true
-	chown -R ${OWNER}: ${DATA_DIR} && chown ${OWNER}: ${USER_HOME}/.xinitrc 2>/dev/null || true
+	chown -R ${OWNER}: ${DATA_DIR} && chown ${OWNER}: ${USER_HOME}/.xinitrc ${USER_HOME}/.xprofile 2>/dev/null || true
 	@echo ""
 	@echo "  dwm installed successfully."
 	@echo "  Log out and start dwm with: startx"

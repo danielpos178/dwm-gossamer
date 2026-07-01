@@ -7,6 +7,10 @@
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
 
+# Source theme environment
+THEME_ENV="${XDG_CONFIG_HOME:-$HOME/.config}/dwm-titus/theme-env.sh"
+[ -f "$THEME_ENV" ] && . "$THEME_ENV"
+
 # Ensure X session environment variables are set
 export XDG_SESSION_TYPE=x11
 [ -z "$XDG_RUNTIME_DIR" ] && export XDG_RUNTIME_DIR="/run/user/$(id -u)"
