@@ -7,8 +7,16 @@
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
 
-# Ensure X session variables are set (elogind provides these on normal TTY login)
+# Ensure X session environment variables are set
 export XDG_SESSION_TYPE=x11
 [ -z "$XDG_RUNTIME_DIR" ] && export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 
-exec dbus-run-session dwm
+# Kill orphaned background processes when the session ends.
+cleanup() {
+    for p in clipmenud; do
+        pkill -x "$p" 2>/dev/null || true
+    done
+}
+trap cleanup EXIT
+
+dbus-run-session dwm

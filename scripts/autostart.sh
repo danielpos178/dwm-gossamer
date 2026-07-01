@@ -30,7 +30,7 @@ dunst 2>/dev/null &
 
 # Clipboard manager daemon (passive X11 selection monitor)
 if command -v clipmenud &>/dev/null; then
-    clipmenud &
+    clipmenud 2>/dev/null &
 fi
 
 # PipeWire audio (needed on non-systemd systems; harmless on systemd if already running)
