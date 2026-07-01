@@ -65,7 +65,22 @@ load_config() {
 
 # Get current X11 keyboard layout
 get_current() {
-    setxkbmap -query 2>/dev/null | awk '/^layout:/{print $2; exit}'
+    local layout
+    # Try setxkbmap -query first
+    layout=$(setxkbmap -query 2>/dev/null | awk '/^layout:/{print $2; exit}')
+    
+    # If empty, try parsing from setxkbmap -print
+    if [[ -z "$layout" ]]; then
+        layout=$(setxkbmap -print 2>/dev/null | awk -F'+' '/xkb_symbols/ {print $2; exit}' | cut -d'(' -f1)
+    fi
+    
+    # Fallback to DEFAULT_LAYOUT or "us"
+    if [[ -z "$layout" ]]; then
+        layout="${DEFAULT_LAYOUT:-us}"
+    fi
+    
+    # Handle comma-separated layout list by returning the first one
+    echo "${layout%%,*}"
 }
 
 # Count words in string
@@ -97,9 +112,21 @@ apply_layout() {
 
 # Signal polybar to refresh (SIGRTMIN+12 matches module kblayout signal = 12)
 signal_polybar() {
-    local pid
+    # Prefer polybar-msg (IPC) when available — avoids real-time signal issues
+    if command -v polybar-msg &>/dev/null; then
+        polybar-msg hook kblayout 1 2>/dev/null || true
+        return
+    fi
+    local pid sig
     pid=$(pgrep -x polybar 2>/dev/null | head -1) || return 0
-    kill -"SIGRTMIN+12" "$pid" 2>/dev/null || true
+    # Resolve SIGRTMIN+12 dynamically (glibc: 34+12=46, musl: 35+12=47)
+    sig=$(kill -l SIGRTMIN 2>/dev/null || echo "")
+    if [[ -n "$sig" ]]; then
+        sig=$((sig + 12))
+    else
+        sig=46
+    fi
+    kill -"$sig" "$pid" 2>/dev/null || true
 }
 
 # ── Commands ──────────────────────────────────────────────────────────────────

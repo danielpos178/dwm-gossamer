@@ -74,7 +74,14 @@ esac
 # the process name is "bash", not "clipmenud". Use -f instead.
 if ! pgrep -f '[c]lipmenud' &>/dev/null; then
     if command -v clipmenud &>/dev/null; then
-        clipmenud &
+        # Check runtime dependencies for clipmenud
+        if ! command -v clipnotify &>/dev/null; then
+            echo "Warning: clipnotify not found — clipmenud might not capture clipboard changes automatically." >&2
+        fi
+        if ! command -v xsel &>/dev/null && ! command -v xclip &>/dev/null; then
+            echo "Warning: neither xsel nor xclip found — clipmenu requires one of them." >&2
+        fi
+        clipmenud >/dev/null 2>&1 & disown
         sleep 0.3
     else
         echo "clipmenud not found — install clipmenu." >&2
@@ -162,4 +169,4 @@ EOF
 export CM_LAUNCHER=rofi
 export CM_HISTLENGTH=12
 
-exec clipmenu -theme "$THEME_TMP"
+clipmenu -theme "$THEME_TMP"

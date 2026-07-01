@@ -162,6 +162,13 @@ check_cmd "polybar"
 check_cmd "xdg-open"
 check_cmd "clipmenud"
 check_cmd "clipmenu"
+check_cmd "clipnotify"
+if command -v xsel &>/dev/null || command -v xclip &>/dev/null; then
+    printf "  ${GREEN}✓${NC} xsel/xclip (clipboard tool)\n"
+else
+    printf "  ${RED}✗${NC} xsel or xclip ${YELLOW}(missing)${NC}\n"
+    MISSING=$((MISSING + 1))
+fi
 echo ""
 
 echo "Fonts:"

@@ -42,7 +42,7 @@ RUNTIME_DEPS=(
     thunar-archive-plugin nwg-look xdg-user-dirs xorg-xkb-utils xdg-utils
     xdg-desktop-portal-gtk pipewire wireplumber pipewire-pulse pipewire-alsa pavucontrol gnome-keyring
     networkmanager network-manager-applet libnotify rsync
-    clipmenu clipnotify xsel
+    clipmenu clipnotify xsel setxkbmap
 )
 
 THEME_DEPS=(dconf qt6ct qt5ct)
